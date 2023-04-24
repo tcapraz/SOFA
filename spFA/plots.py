@@ -46,23 +46,19 @@ def plot_top_weights(W, factor = 0, top_n = 10, sign=None, highlight=None):
      
     # Add title and axis names
     plt.yticks(my_range, topW.index)
+    signoffset = max(topW)/50
     if sign == "-":
         for i in range(len(topW)):
-            plt.annotate("-", (topW[i]+0.05,i+0.7), fontsize=16)
+            plt.annotate("-", (topW[i]+signoffset,i+0.7), fontsize=16)
     if sign == "+":
         for i in range(len(topW)):
-            plt.annotate("+", (topW[i]+0.05,i+0.7), fontsize=12)
+            plt.annotate("+", (topW[i]+signoffset,i+0.7), fontsize=12)
     plt.xlabel('Loadings')
     plt.ylabel('Features')
     if highlight != None:
         for j in highlight_id:
             plt.setp(ax.get_yticklabels()[j], color='red')
     plt.tight_layout()
-    # show the graph
-        
-    # plot = plt.barh(topW.index, topW)
-    # plt.show()
-    # plt.close()
     return 
 
 
