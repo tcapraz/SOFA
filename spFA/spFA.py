@@ -65,6 +65,7 @@ class spFA():
         self.views = views
         self.ard = ard
         self.horseshoe = horseshoe
+        self.history = [] 
         
         if self.target_llh == "multinomial":
             self.k = len(np.unique(y.numpy()))
@@ -248,6 +249,9 @@ class spFA():
         # do gradient steps
         for step in range(n_steps):
             loss = self.svi.step()
+            # track loss
+            self.history.append(loss)
+            
             if step%1000 == 0:
                 print(loss)
     
