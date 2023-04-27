@@ -1,8 +1,5 @@
-import torch
 import numpy as np
 import matplotlib.pyplot as plt
-import pandas as pd
-import matplotlib
 
 
 def plot_weights(W, factor=0):
@@ -21,7 +18,7 @@ def plot_weights(W, factor=0):
 def plot_top_weights(W, factor=0, top_n=10, sign=None, highlight=None):
     W = W.loc[factor, :]
 
-    if sign == None:
+    if sign is None:
         idx = np.argpartition(abs(W), -top_n)[-top_n:]
         # order = W.map(lambda x : x).sort_values(ascending = False)
         # topW = W[order.index][0:top_n]
@@ -36,7 +33,7 @@ def plot_top_weights(W, factor=0, top_n=10, sign=None, highlight=None):
         topW = W[order.index][0:top_n]
         topW = topW.iloc[::-1]
 
-    if highlight != None:
+    if highlight is not None:
         highlight_id = [i for i, e in enumerate(topW.index.tolist()) if e in highlight]
     my_range = range(1, len(topW.index) + 1)
 
@@ -56,7 +53,7 @@ def plot_top_weights(W, factor=0, top_n=10, sign=None, highlight=None):
             plt.annotate("+", (topW[i] + signoffset, i + 0.7), fontsize=12)
     plt.xlabel("Loadings")
     plt.ylabel("Features")
-    if highlight != None:
+    if highlight is not None:
         for j in highlight_id:
             plt.setp(ax.get_yticklabels()[j], color="red")
     plt.tight_layout()

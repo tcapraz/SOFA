@@ -221,7 +221,7 @@ class spFA:
         adam_params = {"lr": lr, "betas": (0.95, 0.999)}
         optimizer = Adam(adam_params)
 
-        if self.isfit == False or refit:
+        if not self.isfit or refit:
             pyro.clear_param_store()
             self.svi = SVI(self.sFA_model, self.sFA_guide, optimizer, loss=Trace_ELBO())
 
@@ -266,7 +266,7 @@ class spFA:
         -------
         W_pred: list of numpy arrays or numpy array
         """
-        if view == None:
+        if view is None:
             W_pred = []
             for i in range(len(self.X)):
                 predictive = Predictive(self.sFA_model, guide=self.sFA_guide, num_samples=50, return_sites=[f"W_{i}"])
@@ -295,7 +295,7 @@ class spFA:
         """
         params = {i: j for i, j in pyro.get_param_store().items()}
 
-        if view == None:
+        if view is None:
             X_pred = []
             for i in range(len(self.X)):
                 predictive = Predictive(self.sFA_model, guide=self.sFA_guide, num_samples=50, return_sites=[f"X_{i}"])
