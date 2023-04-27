@@ -86,18 +86,18 @@ class spFA():
     
         sigma_data = pyro.param("sigma_data", torch.ones(1, device=device), constraint=pyro.distributions.constraints.positive)
         sigma_response = pyro.param("sigma_response", torch.ones(1, device=device), constraint=pyro.distributions.constraints.positive)
-        if self.horseshoe == True:
+        if self.horseshoe:
             tau = pyro.sample('tau', dist.HalfCauchy(torch.ones(1, device=device)))
         
         W = []
         for i in range(num_views):
             with pyro.plate("factors_{}".format(i), num_factors):
-                if self.ard == True:
+                if self.ard:
                     W_scale = pyro.sample("ard_prior_{}".format(i), dist.Gamma(torch.ones(num_features[i], device=device), torch.ones(num_features[i], device=device)).to_event(1))
                     W_ = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(torch.zeros(num_features[i], device=device), 1/W_scale).to_event(1))
                 else:
                     W_ = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(torch.zeros(num_features[i], device=device), torch.ones(num_features[i], device=device)).to_event(1))
-                if self.horseshoe == True:
+                if self.horseshoe:
                     lam = pyro.sample("lam_{}".format(i), dist.HalfCauchy(torch.ones(num_features[i], device=device)).to_event(1))
                     W_ = pyro.deterministic("W_{}".format(i), W_*lam**2*tau**2)
                 else:
@@ -180,34 +180,34 @@ class spFA():
                 with pyro.plate("betas", supervised_factors):
                     beta = pyro.sample("beta", dist.Normal(beta_loc, beta_scale))
     
-        if self.horseshoe == True:
+        if self.horseshoe:
             tau_loc = pyro.param("tau_loc", torch.ones(1, device=device), constraint=dist.constraints.positive)
             tau = pyro.sample('tau', dist.Delta(tau_loc))
             lam_loc = []
-        if self.ard == True:
+        if self.ard:
             gamma_alpha =[]
             gamma_beta =[]
         W_loc = []
         W_scale = []
 
         for i in range(num_views):
-            if self.ard == True:
+            if self.ard:
                 gamma_alpha.append(pyro.param("gamma_alpha_{}".format(i), torch.ones( (num_factors, num_features[i]), device=device), constraint=dist.constraints.positive))
                 gamma_beta.append(pyro.param("gamma_beta_{}".format(i), torch.ones( (num_factors,  num_features[i]), device=device), constraint=dist.constraints.positive))
             else:
                 W_scale.append(pyro.param("W_scale_{}".format(i), torch.ones( (num_factors, num_features[i]), device=device), constraint=pyro.distributions.constraints.positive))
 
             W_loc.append(pyro.param("W_loc_{}".format(i), torch.zeros( (num_factors, num_features[i]), device=device)))
-            if self.horseshoe == True:
+            if self.horseshoe:
                 lam_loc.append(pyro.param("lam_loc_{}".format(i), torch.ones((num_factors,  num_features[i]), device=device), constraint=dist.constraints.positive))
            
             with pyro.plate("factors_{}".format(i), num_factors):
-                if self.ard == True:
+                if self.ard:
                     W_scale = pyro.sample("ard_prior_{}".format(i), dist.Delta(gamma_alpha[i]/gamma_beta[i]).to_event(1))
                     W = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(W_loc[i], 1/W_scale).to_event(1))
                 else:
                     W = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(W_loc[i], W_scale[i]).to_event(1))
-                if self.horseshoe == True:
+                if self.horseshoe:
                     lam = pyro.sample("lam_{}".format(i), dist.Delta(lam_loc[i]).to_event(1))
 
         with pyro.plate("data", num_samples):    
@@ -240,7 +240,7 @@ class spFA():
         adam_params = {"lr": lr, "betas": (0.95, 0.999)}
         optimizer = Adam(adam_params)
         
-        if self.isfit == False or refit == True:
+        if self.isfit == False or refit:
             pyro.clear_param_store()        
             self.svi = SVI(self.sFA_model,self.sFA_guide , optimizer, loss=Trace_ELBO())
         
@@ -358,7 +358,7 @@ class spFA():
         """
         params = {i:j for i,j in pyro.get_param_store().items()}
 
-        if view ==None:
+        if view is None:
             X_pred = []
             for i in range(len(self.X)):
                 for j in range(len(self.num_factors)):
