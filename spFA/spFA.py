@@ -7,6 +7,7 @@ from pyro.infer import Predictive
 import numpy as np
 from pyro.optim import Adam
 import torch.nn as nn
+from tqdm import tqdm
 
 sigmoid = nn.Sigmoid()
 softmax = nn.Softmax(dim=1)
@@ -243,14 +244,16 @@ class spFA():
             pyro.clear_param_store()        
             self.svi = SVI(self.sFA_model,self.sFA_guide , optimizer, loss=Trace_ELBO())
         
+        
+        pbar = tqdm(range(n_steps))
         # do gradient steps
-        for step in range(n_steps):
+        for step in pbar:
             loss = self.svi.step()
             # track loss
             self.history.append(loss)
             
-            if step%1000 == 0:
-                print(loss)
+            if step % 1000 == 0:
+                pbar.set_description(f"Current Elbo {loss:.2E}")
     
         print("training done")
         self.isfit = True
