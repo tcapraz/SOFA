@@ -6,17 +6,14 @@ from pyro.infer import SVI, Trace_ELBO
 from pyro.infer import Predictive
 import numpy as np
 from pyro.optim import Adam
+import torch.nn as nn
 
-def sigmoid(x):
-    return 1/(1+torch.exp(-x))
+sigmoid = nn.Sigmoid()
+softmax = nn.Softmax(dim=1)
 
 def npsigmoid(x):
     return 1/(1+np.exp(-x))
 
-def softmax(x):
-    e = torch.exp(x)
-    s = torch.sum(torch.exp(x), dim=1)
-    return (e.T/s).T
 
 class spFA():
     def __init__(self, X, llh, num_factors, views, y=None, target_llh = None, supervised_factors=0, device=torch.device('cpu'), ard=True, horseshoe=True):
