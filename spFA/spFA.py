@@ -18,7 +18,7 @@ def npsigmoid(x):
 
 
 class spFA:
-    def __init__(self, X, llh, num_factors, views, y=None, target_llh=None, supervised_factors=0, device=torch.device("cpu"), ard=True, horseshoe=True):
+    def __init__(self, X, llh, num_factors, views, y=None, target_llh=None, supervised_factors=0, device=torch.device("cpu"), ard=True, horseshoe=True, update_freq=200):
         """
 
 
@@ -47,6 +47,8 @@ class spFA:
         horseshoe : bool, optional
             whethere to use horseshoe priors on the loadings.
             The default is True.
+        update_freq: int
+            Frequency of steps before ELBO is displayed during training.
         """
 
         self.num_factors = num_factors
@@ -62,6 +64,7 @@ class spFA:
         self.ard = ard
         self.horseshoe = horseshoe
         self.history = []
+        self.update_freq = update_freq
 
         if self.target_llh == "multinomial":
             self.k = len(np.unique(y.numpy()))
@@ -226,16 +229,18 @@ class spFA:
             self.svi = SVI(self.sFA_model, self.sFA_guide, optimizer, loss=Trace_ELBO())
 
         pbar = tqdm(range(n_steps))
+        last_elbo = np.inf
         # do gradient steps
         for step in pbar:
             loss = self.svi.step()
             # track loss
             self.history.append(loss)
 
-            if step % 1000 == 0:
-                pbar.set_description(f"Current Elbo {loss:.2E}")
+            if step % self.update_freq == 0:
+                delta = last_elbo - loss
+                pbar.set_description(f"Current Elbo {loss:.2E} | Delta: {last_elbo:.0f}")
+                last_elbo = loss
 
-        print("training done")
         self.isfit = True
 
     def get_factors(self):
