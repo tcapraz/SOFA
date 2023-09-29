@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from typing import Union, List, Optional, Literal
 import pyro
 import torch
 import pyro.distributions as dist
@@ -11,7 +12,7 @@ from tqdm import tqdm
 import muon as mu
 from muon import MuData
 from sklearn import preprocessing
-
+from pandas import DataFrame
 sigmoid = nn.Sigmoid()
 softmax = nn.Softmax(dim=1)
 
@@ -21,19 +22,20 @@ softmax = nn.Softmax(dim=1)
 
 class spFA:
     def __init__(self, 
-                 Xmdata,  
-                 num_factors, 
-                 Ymdata=None,  
-                 target_llh=None, 
-                 design=None, 
-                 device=torch.device("cpu"), 
-                 ard=True, 
-                 horseshoe=True, 
-                 update_freq=200, 
-                 subsample=0, 
-                 metadata=None, 
-                 target_scale=None,
-                 verbose=True):
+                 Xmdata: MuData,  
+                 num_factors: int, 
+                 Ymdata: Union[None, MuData]=None,  
+                 target_llh: Union[None, List[str]]=None, 
+                 design: Union[None, np.ndarray]=None, 
+                 device: Optional[Literal["cuda", "cpu"]]="cpu", 
+                 ard: bool=True, 
+                 horseshoe: bool=True, 
+                 update_freq: int=200, 
+                 subsample: int=0, 
+                 metadata: Optional[Union[None, DataFrame]]=None, 
+                 target_scale: Optional[Union[None, float]]=None,
+                 verbose: bool=True
+                 ):
         """
         Initializes a spFA model instance.
 
@@ -82,7 +84,7 @@ class spFA:
         self.history = []
         self.update_freq = update_freq
         self.metadata = metadata
-    
+        self.verbose = verbose
         if Ymdata is not None:
             self.Y, self.target_views, self.target_llh, self.k, self.y_dim, self.Ymask  = self._target_handler()
             if target_scale is None:
@@ -152,7 +154,7 @@ class spFA:
                 y_dim.append(1)
         return Y, target_views, target_llh, k, y_dim, mask
     
-    def _sFA_model(self, idx, subsample=32):
+    def _spFA_model(self, idx, subsample=32):
         X = self.X
         Y = self.Y
         llh = self.llh
@@ -239,7 +241,7 @@ class spFA:
                             elif target_llh[i] == "multinomial":
                                 pyro.sample(f"obs_response_{i}", dist.Categorical(softmax(y_pred)).to_event(1), obs=Y[i][ind])
 
-    def _sFA_guide(self, idx, subsample=32):
+    def _spFA_guide(self, idx, subsample=32):
         X = self.X
         Y = self.Y
         llh = self.llh
@@ -311,7 +313,7 @@ class spFA:
         with data_plate as ind:
             pyro.sample("Z", dist.Normal(Z_loc[ind,:], Z_scale[ind,:]).to_event(1))
      
-    def fit_spFA(self, n_steps=3000, lr=0.005, refit=False, predict=True):
+    def fit(self, n_steps=3000, lr=0.005, refit=False, predict=True):
         """
         method to fit the spFA model
 
@@ -337,21 +339,26 @@ class spFA:
 
         if not self.isfit or refit:
             pyro.clear_param_store()
-            self.svi = SVI(self._sFA_model, self._sFA_guide, optimizer, loss=Trace_ELBO())
+            self.svi = SVI(self._spFA_model, self._spFA_guide, optimizer, loss=Trace_ELBO())
         if self.verbose:
             pbar = tqdm(range(n_steps))
-        last_elbo = np.inf
-        # do gradient steps
-        for step in pbar:
-            loss = self.svi.step(idx=self.idx, subsample=self.subsample)
-            # track loss
-            self.history.append(loss)
+            last_elbo = np.inf
+            # do gradient steps
+            for step in pbar:
+                loss = self.svi.step(idx=self.idx, subsample=self.subsample)
+                # track loss
+                self.history.append(loss)
 
-            if step % self.update_freq == 0:
-                delta = last_elbo - loss
-                if self.verbose:
-                    pbar.set_description(f"Current Elbo {loss:.2E} | Delta: {delta:.0f}")
-                last_elbo = loss
+                if step % self.update_freq == 0:
+                    delta = last_elbo - loss
+                    if self.verbose:
+                        pbar.set_description(f"Current Elbo {loss:.2E} | Delta: {delta:.0f}")
+                    last_elbo = loss
+        else:
+            for step in range(n_steps):
+                loss = self.svi.step(idx=self.idx, subsample=self.subsample)
+                # track loss
+                self.history.append(loss)
 
         self.isfit = True
         if predict:
@@ -369,13 +376,18 @@ class spFA:
         split_obs = torch.split(self.idx, num_split)
         if verbose:
             pbar_pred = tqdm(range(len(split_obs)))
-        for i in pbar_pred:
-            predictive = Predictive(self.sFA_model, guide=self.sFA_guide, num_samples=num_samples, return_sites=[site])
-            samples = predictive(idx=split_obs[i], subsample=0)
-            pred.append(np.mean(samples[site].cpu().numpy(), axis=0))
-            torch.cuda.empty_cache()
-            if verbose:
+            for i in pbar_pred:
+                predictive = Predictive(self.sFA_model, guide=self.sFA_guide, num_samples=num_samples, return_sites=[site])
+                samples = predictive(idx=split_obs[i], subsample=0)
+                pred.append(np.mean(samples[site].cpu().numpy(), axis=0))
+                torch.cuda.empty_cache()
                 pbar_pred.set_description(f"Predicting {site} for obs {torch.min(split_obs[i])}-{torch.max(split_obs[i])}.")
+        else:
+            for i in range(len(split_obs)):
+                predictive = Predictive(self._spFA_model, guide=self._spFA_guide, num_samples=num_samples, return_sites=[site])
+                samples = predictive(idx=split_obs[i], subsample=0)
+                pred.append(np.mean(samples[site].cpu().numpy(), axis=0))
+                torch.cuda.empty_cache()
         return np.concatenate(pred)
     
    
