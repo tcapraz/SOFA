@@ -1,16 +1,13 @@
 {
  "cells": [
   {
-   "cell_type": "code",
-   "execution_count": 7,
+   "cell_type": "markdown",
    "id": "698775e8",
    "metadata": {
     "tags": []
    },
-   "outputs": [],
    "source": [
-    "%reload_ext autoreload\n",
-    "%autoreload 2"
+    "# Quickstart tutorial for spFA with tcga breast cancer dataset"
    ]
   },
   {
