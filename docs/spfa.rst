@@ -3,6 +3,6 @@ spFA
 
 
 
-.. automodule:: spfa.models.spFA
+.. automodule:: spfa.spFA
    :members:
 
