@@ -16,7 +16,9 @@ Welcome to spfa's documentation!
    :maxdepth: 2
    :caption: Tutorials:
    
+   notebooks/installation
    notebooks/tcga_data
+   
 
    
 
