@@ -53,7 +53,7 @@ def get_ad(
             adata = AnnData(encoded_data)
             label_mapping = {label: encoded_label for label, encoded_label in zip(label_encoder.classes_, label_encoder.transform(label_encoder.classes_))}
     else:
-        encoded_data = data
+        encoded_data = data.values
 
     if data.shape[1] == 1:
         adata = AnnData(encoded_data.reshape(-1,1))

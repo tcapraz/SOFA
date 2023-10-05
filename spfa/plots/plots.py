@@ -290,7 +290,7 @@ def plot_factor_covariate_cor(
 
     fig, ax = plt.subplots(1)
     plot = ax.imshow(abs(cormat), cmap="Oranges", origin="lower")
-    ax.xlabel("Covariate")
+    ax.set_xlabel("Covariate")
     ax.set_xticks(ticks = range(len(metavar)), labels= metavar, rotation=90)
     ax.set_yticks(ticks = range(cormat.shape[0]), labels= y_labels)
     ax.set_ylabel("Factor")
