@@ -187,8 +187,9 @@ class spFA:
                 else:
                     W_ = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(torch.zeros(num_features[i], device=device), torch.ones(num_features[i], device=device)).to_event(1))
                 if self.horseshoe:
-                    lam = pyro.sample("lam_{}".format(i), dist.HalfCauchy(torch.ones(num_features[i], device=device)*10).to_event(1))
-                    W_ = pyro.deterministic("W_{}".format(i), W_ * lam**2 * tau**2)
+                    lam_feature = pyro.sample("lam_feature_{}".format(i), dist.HalfCauchy(torch.ones(num_features[i], device=device)*10).to_event(1))
+                    lam_factor = pyro.sample("lam_factor_{}".format(i), dist.HalfCauchy(torch.ones(1, device=device)*10))
+                    W_ = pyro.deterministic("W_{}".format(i), (W_.T * lam_feature.T**2 * lam_factor**2 * tau**2).T)
                 else:
                     W_ = pyro.deterministic("W_{}".format(i), W_)
 
@@ -278,7 +279,8 @@ class spFA:
         if self.horseshoe:
             tau_loc = pyro.param("tau_loc", torch.ones(1, device=device), constraint=dist.constraints.positive)
             tau = pyro.sample("tau", dist.Delta(tau_loc))
-            lam_loc = []
+            lam_feature_loc = []
+            lam_factor_loc = []
         if self.ard:
             gamma_alpha = []
             gamma_beta = []
@@ -295,7 +297,8 @@ class spFA:
 
             W_loc.append(pyro.param("W_loc_{}".format(i), torch.zeros((num_factors, num_features[i]), device=device)))
             if self.horseshoe:
-                lam_loc.append(pyro.param("lam_loc_{}".format(i), torch.ones((num_factors, num_features[i]), device=device), constraint=dist.constraints.positive))
+                lam_feature_loc.append(pyro.param("lam_feature_loc_{}".format(i), torch.ones((num_factors, num_features[i]), device=device), constraint=dist.constraints.positive))
+                lam_factor_loc.append(pyro.param("lam_factor_loc_{}".format(i), torch.ones(num_factors, device=device), constraint=dist.constraints.positive))
 
             with pyro.plate("factors_{}".format(i), num_factors):
                 if self.ard:
@@ -304,7 +307,8 @@ class spFA:
                 else:
                     W = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(W_loc[i], W_scale[i]).to_event(1))
                 if self.horseshoe:
-                    lam = pyro.sample("lam_{}".format(i), dist.Delta(lam_loc[i]).to_event(1))
+                    lam_feature = pyro.sample("lam_feature_{}".format(i), dist.Delta(lam_feature_loc[i]).to_event(1))
+                    lam_factor = pyro.sample("lam_factor_{}".format(i), dist.Delta(lam_factor_loc[i]))
         if subsample > 0:
             data_plate = pyro.plate("data", num_samples, subsample_size=subsample)
         else:

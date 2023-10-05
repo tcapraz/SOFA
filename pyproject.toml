@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "spFA"
-version = "0.3.0"
+version = "0.4.0"
 description = "Probabilistic factor analysis model with covariate guided factors"
 authors = ["capraz <tuemayc@hotmail.com>"]
 readme = "README.md"
