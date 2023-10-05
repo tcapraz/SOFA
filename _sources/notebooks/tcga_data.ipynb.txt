@@ -7,7 +7,7 @@
     "tags": []
    },
    "source": [
-    "# Quickstart tutorial for spFA with tcga breast cancer dataset"
+    "# Analysis of TCGA breast cancer dataset"
    ]
   },
   {
