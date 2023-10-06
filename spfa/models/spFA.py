@@ -14,6 +14,7 @@ from muon import MuData
 from sklearn import preprocessing
 from pandas import DataFrame
 from collections import defaultdict
+from scipy import stats
 
 sigmoid = nn.Sigmoid()
 softmax = nn.Softmax(dim=1)
@@ -36,7 +37,8 @@ class spFA:
                  subsample: int=0, 
                  metadata: Optional[Union[None, DataFrame]]=None, 
                  target_scale: Optional[Union[None, float]]=None,
-                 verbose: bool=True
+                 verbose: bool=True,
+                 burn_in: int=0
                  ):
         """
         Initializes a spFA model instance.
@@ -69,6 +71,8 @@ class spFA:
             Scaling factor for target likelihood. The default is None.
         verbose : bool, optional
             Whether to print fitting progress. The default is True.
+        burn_in : int, optional
+            Number of steps to burn in. The default is 0.
         """
         
 
@@ -87,23 +91,33 @@ class spFA:
         self.update_freq = update_freq
         self.metadata = metadata
         self.verbose = verbose
-        if Ymdata is not None:
+        self.burn_in = burn_in
+
+        if design is not None:
+            self.design = design.to(device)
+            self.supervised_factors = torch.sum(torch.any(self.design!=0, dim=0))
+        else:
+            self.design = None
+
+        if Ymdata is not None and burn_in == 0:
             self.Y, self.target_views, self.target_llh, self.k, self.y_dim, self.Ymask  = self._target_handler()
             if target_scale is None:
                 self.target_scale = np.ones(len(Ymdata.mod))
             else:
                 self.target_scale = target_scale
+            self.design = design.to(device)
+            self.supervised_factors = torch.sum(torch.any(self.design!=0, dim=0))
+        elif burn_in > 0:
+            self.Y = None
+            self.target_llh = None
+            self.supervised_factors = 0
+            self.target_scale = np.ones(len(Ymdata.mod))
         else:
             self.Y = None
             self.target_llh = None
             self.supervised_factors = 0
-                
-        if design is not None:
-            self.design = design.to(device)
-            self.supervised_factors = torch.sum(torch.any(design!=0, dim=0))
-        else:
-            self.design = None
 
+       
         self.num_samples = Xmdata.n_obs
         self.subsample = subsample
         self.idx = torch.arange(self.num_samples)
@@ -352,7 +366,9 @@ class spFA:
                 self.elbo_terms.update({"obs_response_" + str(i):[] for i in range(len(self.Y))})
 
         self.gradient_norms = defaultdict(list)
-        
+
+
+
         if self.verbose:
             pbar = tqdm(range(n_steps))
             last_elbo = np.inf
@@ -371,8 +387,21 @@ class spFA:
                     if self.verbose:
                         pbar.set_description(f"Current Elbo {loss:.2E} | Delta: {delta:.0f}")
                     last_elbo = loss
-                
-                
+                if step == self.burn_in:
+                    self.Y, self.target_views, self.target_llh, self.k, self.y_dim, self.Ymask  = self._target_handler()
+                    self.supervised_factors = torch.sum(torch.any(self.design!=0, dim=0))
+                    self.elbo_terms.update({"obs_response_" + str(i):[] for i in range(len(self.Y))})
+                    Z = self.predict("Z")
+                    cor = []
+                    idx = []
+                    self.design = torch.zeros((len(self.Ymdata.mod), self.num_factors))
+                    for ix,i in enumerate(self.Ymdata.mod):
+                        mask = self.Ymdata.mod[i].obsm["mask"]
+                        y = self.Ymdata.mod[i].X[mask]   
+                        cor.append([stats.pearsonr(Z[mask,z], y)[0] for z in range(Z.shape[1])])
+                        idx.append(np.argmax(np.abs(cor)))
+                        self.design[ix,idx[ix]] =1
+                    self.design = self.design.to(self.device)
                 guide_trace = pyro.poutine.trace(self._spFA_guide).get_trace(idx = self.idx, subsample=0)
                 model_trace = pyro.poutine.trace(pyro.poutine.replay(self._spFA_model, guide_trace)).get_trace(idx = self.idx, subsample=0)
                 for i in self.elbo_terms:
