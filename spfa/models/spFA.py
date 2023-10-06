@@ -392,14 +392,12 @@ class spFA:
                     self.supervised_factors = torch.sum(torch.any(self.design!=0, dim=0))
                     self.elbo_terms.update({"obs_response_" + str(i):[] for i in range(len(self.Y))})
                     Z = self.predict("Z")
-                    cor = []
-                    idx = []
                     self.design = torch.zeros((len(self.Ymdata.mod), self.num_factors))
                     for ix,i in enumerate(self.Ymdata.mod):
                         mask = self.Ymdata.mod[i].obsm["mask"]
                         y = self.Ymdata.mod[i].X[mask]   
-                        cor.append([stats.pearsonr(Z[mask,z], y)[0] for z in range(Z.shape[1])])
-                        idx.append(np.argmax(np.abs(cor)))
+                        cor = [stats.pearsonr(Z[mask,z], y)[0] for z in range(Z.shape[1])]
+                        idx = np.argmax(np.abs(cor))
                         self.design[ix,idx[ix]] =1
                     self.design = self.design.to(self.device)
                 guide_trace = pyro.poutine.trace(self._spFA_guide).get_trace(idx = self.idx, subsample=0)
