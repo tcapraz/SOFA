@@ -398,7 +398,7 @@ class spFA:
                         y = self.Ymdata.mod[i].X[mask]   
                         cor = [stats.pearsonr(Z[mask,z], y)[0] for z in range(Z.shape[1])]
                         idx = np.argmax(np.abs(cor))
-                        self.design[ix,idx[ix]] =1
+                        self.design[ix,idx] =1
                     self.design = self.design.to(self.device)
                 guide_trace = pyro.poutine.trace(self._spFA_guide).get_trace(idx = self.idx, subsample=0)
                 model_trace = pyro.poutine.trace(pyro.poutine.replay(self._spFA_model, guide_trace)).get_trace(idx = self.idx, subsample=0)
