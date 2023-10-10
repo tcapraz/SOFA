@@ -23,22 +23,7 @@ softmax = nn.Softmax(dim=1)
 
 
 class spFA:
-    def __init__(self, 
-                 Xmdata: MuData,  
-                 num_factors: int, 
-                 Ymdata: Union[None, MuData]=None,  
-                 target_llh: Union[None, List[str]]=None, 
-                 design: Union[None, np.ndarray]=None, 
-                 device: Optional[Literal["cuda", "cpu"]]="cpu", 
-                 ard: bool=True, 
-                 horseshoe: bool=True, 
-                 update_freq: int=200, 
-                 subsample: int=0, 
-                 metadata: Optional[Union[None, DataFrame]]=None, 
-                 target_scale: Optional[Union[None, float]]=None,
-                 verbose: bool=True
-                 ):
-        """
+    """
         Initializes a spFA model instance.
 
         Parameters
@@ -69,7 +54,23 @@ class spFA:
             Scaling factor for target likelihood. The default is None.
         verbose : bool, optional
             Whether to print fitting progress. The default is True.
-        """
+    """
+    def __init__(self, 
+                 Xmdata: MuData,  
+                 num_factors: int, 
+                 Ymdata: Union[None, MuData]=None,  
+                 target_llh: Union[None, List[str]]=None, 
+                 design: Union[None, np.ndarray]=None, 
+                 device: Optional[Literal["cuda", "cpu"]]="cpu", 
+                 ard: bool=True, 
+                 horseshoe: bool=True, 
+                 update_freq: int=200, 
+                 subsample: int=0, 
+                 metadata: Optional[Union[None, DataFrame]]=None, 
+                 target_scale: Optional[Union[None, float]]=None,
+                 verbose: bool=True
+                 ):
+ 
         
 
         self.num_factors = num_factors
