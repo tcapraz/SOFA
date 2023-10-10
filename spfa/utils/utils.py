@@ -22,16 +22,13 @@ import numpy as np
 import anndata as ad
 from sklearn.preprocessing import LabelEncoder
 
-def get_ad(
-        data: np.ndarray, 
-        llh: str="gaussian"
-        ) -> AnnData:
+def get_ad(data: pd.DataFrame, llh: str="gaussian") -> AnnData:
     """
     Convert a numpy array to an AnnData object.
 
     Parameters:
     -----------
-    data : np.ndarray
+    data : pandas DataFrame
         The input data to be converted to AnnData object.
     name : str
         The name of the variable.
@@ -64,6 +61,7 @@ def get_ad(
     data.index = data.index.astype(str)
     adata.obs_names = data.index.tolist()
     adata.obsm["mask"] = ~np.any(pd.isnull(data), axis=1)
+    adata.X[adata.obsm["mask"] == False] = 0
     adata.uns["llh"] = llh
     if llh == "multinomial" or llh == "bernoulli":
         adata.uns["label_map"] = label_mapping
