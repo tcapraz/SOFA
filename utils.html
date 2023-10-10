@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Welcome to spfa’s documentation! &mdash; spfa 0.1 documentation</title>
+  <title>spFA &mdash; spfa 0.1 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -19,7 +19,8 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="spFA" href="spfa.html" /> 
+    <link rel="next" title="Installation" href="notebooks/installation.html" />
+    <link rel="prev" title="spFA" href="plots.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -27,7 +28,7 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="#" class="icon icon-home"> spfa
+            <a href="index.html" class="icon icon-home"> spfa
           </a>
               <div class="version">
                 0.1.0
@@ -41,10 +42,10 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <p class="caption" role="heading"><span class="caption-text">API:</span></p>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="spfa.html">spFA</a></li>
 <li class="toctree-l1"><a class="reference internal" href="plots.html">spFA</a></li>
-<li class="toctree-l1"><a class="reference internal" href="utils.html">spFA</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">spFA</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Tutorials:</span></p>
 <ul>
@@ -58,17 +59,17 @@
 
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="#">spfa</a>
+          <a href="index.html">spfa</a>
       </nav>
 
       <div class="wy-nav-content">
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="#" class="icon icon-home"></a> &raquo;</li>
-      <li>Welcome to spfa’s documentation!</li>
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>spFA</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/utils.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -100,30 +101,34 @@
     text-align: unset;
 }
 </style>
-<section id="welcome-to-spfa-s-documentation">
-<h1>Welcome to spfa’s documentation!<a class="headerlink" href="#welcome-to-spfa-s-documentation" title="Permalink to this headline"></a></h1>
-<div class="toctree-wrapper compound">
-<p class="caption" role="heading"><span class="caption-text">API:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="spfa.html">spFA</a></li>
-<li class="toctree-l1"><a class="reference internal" href="plots.html">spFA</a></li>
-<li class="toctree-l1"><a class="reference internal" href="utils.html">spFA</a></li>
-</ul>
-</div>
-<div class="toctree-wrapper compound">
-<p class="caption" role="heading"><span class="caption-text">Tutorials:</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="notebooks/installation.html">Installation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="notebooks/tcga_data.html">Analysis of TCGA breast cancer dataset</a></li>
-</ul>
-</div>
+<section id="module-spfa.utils.utils">
+<span id="spfa"></span><h1>spFA<a class="headerlink" href="#module-spfa.utils.utils" title="Permalink to this headline"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="spfa.utils.utils.get_ad">
+<span class="sig-prename descclassname"><span class="pre">spfa.utils.utils.</span></span><span class="sig-name descname"><span class="pre">get_ad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">llh</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">'gaussian'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">anndata._core.anndata.AnnData</span></span></span><a class="headerlink" href="#spfa.utils.utils.get_ad" title="Permalink to this definition"></a></dt>
+<dd><p>Convert a numpy array to an AnnData object.</p>
+<dl class="simple">
+<dt>data<span class="classifier">pandas DataFrame</span></dt><dd><p>The input data to be converted to AnnData object.</p>
+</dd>
+<dt>name<span class="classifier">str</span></dt><dd><p>The name of the variable.</p>
+</dd>
+<dt>llh<span class="classifier">str, optional</span></dt><dd><p>The likelihood of the data. Default is “gaussian”.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>adata<span class="classifier">AnnData</span></dt><dd><p>The converted AnnData object.</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="spfa.html" class="btn btn-neutral float-right" title="spFA" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="plots.html" class="btn btn-neutral float-left" title="spFA" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="notebooks/installation.html" class="btn btn-neutral float-right" title="Installation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

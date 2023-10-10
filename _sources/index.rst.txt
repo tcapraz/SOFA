@@ -9,6 +9,8 @@ Welcome to spfa's documentation!
    :caption: API:
 
    spfa
+   plots
+   utils
 
 
 
