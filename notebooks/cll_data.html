@@ -602,7 +602,7 @@ tensor([[1., 0., 0., 0., 0., 0., 0.],
         [0., 0., 0., 1., 0., 0., 0.]])
 </pre></div></div>
 </div>
-<p>The design matrix specifies which factor should be guided by which covariates. In our case the first 4 factors are guided the 4 entries in Ymdata (IGHV, trisomy12, Age, Sex).</p>
+<p>The design matrix specifies which factor should be guided by which covariates. In our case the first 4 factors are each guided by the 4 entries in Ymdata (IGHV, trisomy12, Age, Sex).</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
 </pre></div>
@@ -620,8 +620,17 @@ tensor([[1., 0., 0., 0., 0., 0., 0.],
 <br/></pre></div>
 </div>
 </div>
-<p>This sets up the model, key parameters are: * Xmdata: contains the omics modalities as MuData object * Ymdata: contains the target covariates as MuData object * num_factors: number of factors to fit * device: device to use for fitting. We highly recommend to run spfa with a cuda device (torch.device(“cuda”)) * ard: whether to use sparse automatic relevance determination priors on weights * horseshoe: whether to use sparse horseshoe priors on weights * subsample: whether to subsample the
-data during fitting. Recommended for very large data sets like single cell data sets. * target_scale: crucial hyperparameter to scale how strong factors are guided by target covariates. Too high scaling parameters can lead to overfitting (Factors don’t explain variance of Xmdata, but perfectly predict Ymdata). Too low values can lead to the model ignoring the covariate guidance.</p>
+<p>This sets up the model, key parameters are:</p>
+<ul class="simple">
+<li><p>Xmdata: contains the omics modalities as MuData object</p></li>
+<li><p>Ymdata: contains the target covariates as MuData object</p></li>
+<li><p>num_factors: number of factors to fit</p></li>
+<li><p>device: device to use for fitting. We highly recommend to run spfa with a cuda device (torch.device(“cuda”))</p></li>
+<li><p>ard: whether to use sparse automatic relevance determination priors on weights</p></li>
+<li><p>horseshoe: whether to use sparse horseshoe priors on weights</p></li>
+<li><p>subsample: whether to subsample the data during fitting. Recommended for very large data sets like single cell data sets.</p></li>
+<li><p>target_scale: crucial hyperparameter to scale how strong factors are guided by target covariates. Too high scaling parameters can lead to overfitting (Factors don’t explain variance of Xmdata, but perfectly predict Ymdata). Too low values can lead to the model ignoring the covariate guidance.</p></li>
+</ul>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
 </pre></div>
