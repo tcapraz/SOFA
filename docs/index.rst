@@ -20,6 +20,7 @@ Welcome to spfa's documentation!
    
    notebooks/installation
    notebooks/tcga_data
+   notebooks/cll_data
    
 
    
