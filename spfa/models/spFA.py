@@ -68,7 +68,10 @@ class spFA:
                  subsample: int=0, 
                  metadata: Optional[Union[None, DataFrame]]=None, 
                  target_scale: Optional[Union[None, float]]=None,
-                 verbose: bool=True
+                 verbose: bool=True,
+                 horseshoe_scale_feature: float=10,
+                 horseshoe_scale_factor: float=10,
+                 horseshoe_scale_global: float=1
                  ):
  
         
@@ -88,6 +91,10 @@ class spFA:
         self.update_freq = update_freq
         self.metadata = metadata
         self.verbose = verbose
+        self.horseshoe_scale_feature = horseshoe_scale_feature 
+        self.horseshoe_scale_factor = horseshoe_scale_factor
+        self.horseshoe_scale_global = horseshoe_scale_global
+
         if Ymdata is not None:
             self.Y, self.target_views, self.target_llh, self.k, self.y_dim, self.Ymask  = self._target_handler()
             if target_scale is None:
@@ -179,7 +186,7 @@ class spFA:
             sigma_response = pyro.param("sigma_response", torch.ones(num_target_views, device=device), constraint=pyro.distributions.constraints.positive)
 
         if self.horseshoe:
-            tau = pyro.sample("tau", dist.HalfCauchy(torch.ones(1, device=device)))
+            tau = pyro.sample("tau", dist.HalfCauchy(torch.ones(1, device=device)*self.horseshoe_scale_global))
 
         W = []
         for i in range(num_views):
@@ -190,8 +197,8 @@ class spFA:
                 else:
                     W_ = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(torch.zeros(num_features[i], device=device), torch.ones(num_features[i], device=device)).to_event(1))
                 if self.horseshoe:
-                    lam_feature = pyro.sample("lam_feature_{}".format(i), dist.HalfCauchy(torch.ones(num_features[i], device=device)*10).to_event(1))
-                    lam_factor = pyro.sample("lam_factor_{}".format(i), dist.HalfCauchy(torch.ones(1, device=device)*10))
+                    lam_feature = pyro.sample("lam_feature_{}".format(i), dist.HalfCauchy(torch.ones(num_features[i], device=device)*self.horseshoe_scale_feature).to_event(1))
+                    lam_factor = pyro.sample("lam_factor_{}".format(i), dist.HalfCauchy(torch.ones(1, device=device)*self.horseshoe_scale_factor))
                     W_ = pyro.deterministic("W_{}".format(i), (W_.T * lam_feature.T**2 * lam_factor**2 * tau**2).T)
                 else:
                     W_ = pyro.deterministic("W_{}".format(i), W_)
@@ -200,13 +207,17 @@ class spFA:
 
         if supervised_factors > 0:
             beta = []
+            beta0 = []
             for i in range(num_target_views):
                 with pyro.plate(f"betas_{i}", int(torch.sum(design[i,:]))):
                     if target_llh[i] == "multinomial":
                         beta_ = pyro.sample(f"beta_{i}", dist.Normal(torch.zeros(self.k[i], device=device), torch.ones(self.k[i], device=device)).to_event(1))
+                        beta0_ = pyro.sample(f"beta0_{i}", dist.Normal(torch.zeros(self.k[i], device=device), torch.ones(self.k[i], device=device)).to_event(1))
                     else:
                         beta_ = pyro.sample(f"beta_{i}", dist.Normal(torch.zeros(self.y_dim[i], device=device), torch.ones(self.y_dim[i], device=device)).to_event(1))
+                        beta0_ = pyro.sample(f"beta0_{i}", dist.Normal(torch.zeros(self.y_dim[i], device=device), torch.ones(self.y_dim[i], device=device)).to_event(1))
                 beta.append(beta_)
+                beta0.append(beta0_)
               
         if subsample > 0:
             data_plate = pyro.plate("data", num_samples, subsample_size=subsample)
@@ -236,7 +247,7 @@ class spFA:
                 for i in range(num_target_views):
                     with pyro.poutine.scale(scale=self.target_scale[i]):
                         with pyro.poutine.mask(mask=self.Ymask[i][ind]):
-                            y_pred = Z[:, design[i,:]==1] @ beta[i]
+                            y_pred = Z[:, design[i,:]==1] @ beta[i] + beta0[i]
                             pyro.deterministic(f"Y_{i}", y_pred)
                             if target_llh[i] == "gaussian":
                                 pyro.sample(f"obs_response_{i}", dist.Normal(y_pred, sigma_response[i]).to_event(1), obs=Y[i][ind])
@@ -265,19 +276,26 @@ class spFA:
         
         beta_loc = []
         beta_scale = []
-                            
+        beta0_loc = []
+        beta0_scale = []       
         if supervised_factors > 0:
             for i in range(num_target_views):
                 if self.target_llh[i] == "multinomial":
                     beta_loc.append(pyro.param(f"beta_loc_{i}", torch.zeros(int(torch.sum(design[i,:])), self.k[i], device=device)))
                     beta_scale.append(pyro.param(f"beta_scale_{i}", torch.ones(int(torch.sum(design[i,:])), self.k[i], device=device), constraint=pyro.distributions.constraints.positive))
+                    beta0_loc.append(pyro.param(f"beta0_loc_{i}", torch.zeros(self.k[i], device=device)))
+                    beta0_scale.append(pyro.param(f"beta0_scale_{i}", torch.ones(self.k[i], device=device), constraint=pyro.distributions.constraints.positive))
                     with pyro.plate(f"betas_{i}", int(torch.sum(design[i,:]))):
                         beta = pyro.sample(f"beta_{i}", dist.Normal(beta_loc[i], beta_scale[i]).to_event(1))
+                        beta0= pyro.sample(f"beta0_{i}", dist.Normal(beta0_loc[i], beta0_scale[i]).to_event(1))
                 else:
                     beta_loc.append(pyro.param(f"beta_loc_{i}", torch.zeros(int(torch.sum(design[i,:])), self.y_dim[i], device=device)))
                     beta_scale.append(pyro.param(f"beta_scale_{i}", torch.ones(int(torch.sum(design[i,:])), self.y_dim[i], device=device), constraint=pyro.distributions.constraints.positive))
+                    beta0_loc.append(pyro.param(f"beta0_loc_{i}", torch.zeros(self.y_dim[i], device=device)))
+                    beta0_scale.append(pyro.param(f"beta0_scale_{i}", torch.ones(self.y_dim[i], device=device), constraint=pyro.distributions.constraints.positive))
                     with pyro.plate(f"betas_{i}", int(torch.sum(design[i,:]))):
                         beta = pyro.sample(f"beta_{i}", dist.Normal(beta_loc[i], beta_scale[i]).to_event(1))
+                        beta0 = pyro.sample(f"beta0_{i}", dist.Normal(beta0_loc[i], beta0_scale[i]).to_event(1))
 
         if self.horseshoe:
             tau_loc = pyro.param("tau_loc", torch.ones(1, device=device), constraint=dist.constraints.positive)
