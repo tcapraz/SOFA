@@ -71,11 +71,14 @@ class spFA:
                  verbose: bool=True,
                  horseshoe_scale_feature: float=10,
                  horseshoe_scale_factor: float=10,
-                 horseshoe_scale_global: float=1
+                 horseshoe_scale_global: float=1,
+                 seed: Optional[Union[None, int]]=None
                  ):
  
         
-
+        if seed is not None:
+            pyro.set_rng_seed(seed)
+        self.seed = seed
         self.num_factors = num_factors
 
         self.device = device
@@ -198,8 +201,8 @@ class spFA:
                     W_ = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(torch.zeros(num_features[i], device=device), torch.ones(num_features[i], device=device)).to_event(1))
                 if self.horseshoe:
                     lam_feature = pyro.sample("lam_feature_{}".format(i), dist.HalfCauchy(torch.ones(num_features[i], device=device)*self.horseshoe_scale_feature).to_event(1))
-                    lam_factor = pyro.sample("lam_factor_{}".format(i), dist.HalfCauchy(torch.ones(1, device=device)*self.horseshoe_scale_factor))
-                    W_ = pyro.deterministic("W_{}".format(i), (W_.T * lam_feature.T**2 * lam_factor**2 * tau**2).T)
+                    #lam_factor = pyro.sample("lam_factor_{}".format(i), dist.HalfCauchy(torch.ones(1, device=device)*self.horseshoe_scale_factor))
+                    W_ = pyro.deterministic("W_{}".format(i), (W_ * lam_feature**2  * tau**2))
                 else:
                     W_ = pyro.deterministic("W_{}".format(i), W_)
 
@@ -212,10 +215,11 @@ class spFA:
                 with pyro.plate(f"betas_{i}", int(torch.sum(design[i,:]))):
                     if target_llh[i] == "multinomial":
                         beta_ = pyro.sample(f"beta_{i}", dist.Normal(torch.zeros(self.k[i], device=device), torch.ones(self.k[i], device=device)).to_event(1))
-                        beta0_ = pyro.sample(f"beta0_{i}", dist.Normal(torch.zeros(self.k[i], device=device), torch.ones(self.k[i], device=device)).to_event(1))
                     else:
                         beta_ = pyro.sample(f"beta_{i}", dist.Normal(torch.zeros(self.y_dim[i], device=device), torch.ones(self.y_dim[i], device=device)).to_event(1))
                         beta0_ = pyro.sample(f"beta0_{i}", dist.Normal(torch.zeros(self.y_dim[i], device=device), torch.ones(self.y_dim[i], device=device)).to_event(1))
+                if target_llh[i] == "multinomial":
+                    beta0_ = pyro.sample(f"beta0_{i}", dist.Normal(torch.zeros(self.k[i], device=device), torch.ones(self.k[i], device=device)).to_event(1))
                 beta.append(beta_)
                 beta0.append(beta0_)
               
@@ -287,7 +291,10 @@ class spFA:
                     beta0_scale.append(pyro.param(f"beta0_scale_{i}", torch.ones(self.k[i], device=device), constraint=pyro.distributions.constraints.positive))
                     with pyro.plate(f"betas_{i}", int(torch.sum(design[i,:]))):
                         beta = pyro.sample(f"beta_{i}", dist.Normal(beta_loc[i], beta_scale[i]).to_event(1))
-                        beta0= pyro.sample(f"beta0_{i}", dist.Normal(beta0_loc[i], beta0_scale[i]).to_event(1))
+                    beta0= pyro.sample(f"beta0_{i}", dist.Normal(beta0_loc[i], beta0_scale[i]).to_event(1))
+                    #print(beta0.shape)
+                    #print(beta.shape)
+
                 else:
                     beta_loc.append(pyro.param(f"beta_loc_{i}", torch.zeros(int(torch.sum(design[i,:])), self.y_dim[i], device=device)))
                     beta_scale.append(pyro.param(f"beta_scale_{i}", torch.ones(int(torch.sum(design[i,:])), self.y_dim[i], device=device), constraint=pyro.distributions.constraints.positive))
@@ -319,7 +326,7 @@ class spFA:
             W_loc.append(pyro.param("W_loc_{}".format(i), torch.zeros((num_factors, num_features[i]), device=device)))
             if self.horseshoe:
                 lam_feature_loc.append(pyro.param("lam_feature_loc_{}".format(i), torch.ones((num_factors, num_features[i]), device=device), constraint=dist.constraints.positive))
-                lam_factor_loc.append(pyro.param("lam_factor_loc_{}".format(i), torch.ones(num_factors, device=device), constraint=dist.constraints.positive))
+                #lam_factor_loc.append(pyro.param("lam_factor_loc_{}".format(i), torch.ones(num_factors, device=device), constraint=dist.constraints.positive))
 
             with pyro.plate("factors_{}".format(i), num_factors):
                 if self.ard:
@@ -329,7 +336,7 @@ class spFA:
                     W = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(W_loc[i], W_scale[i]).to_event(1))
                 if self.horseshoe:
                     lam_feature = pyro.sample("lam_feature_{}".format(i), dist.Delta(lam_feature_loc[i]).to_event(1))
-                    lam_factor = pyro.sample("lam_factor_{}".format(i), dist.Delta(lam_factor_loc[i]))
+                    #lam_factor = pyro.sample("lam_factor_{}".format(i), dist.Delta(lam_factor_loc[i]))
         if subsample > 0:
             data_plate = pyro.plate("data", num_samples, subsample_size=subsample)
         else:
@@ -366,9 +373,9 @@ class spFA:
             pyro.clear_param_store()
             self.svi = SVI(self._spFA_model, self._spFA_guide, optimizer, loss=Trace_ELBO())
 
-            self.elbo_terms = {"obs_data_" + str(i):[] for i in range(len(self.X))}
-            if self.Y is not None:
-                self.elbo_terms.update({"obs_response_" + str(i):[] for i in range(len(self.Y))})
+            #self.elbo_terms = {"obs_data_" + str(i):[] for i in range(len(self.X))}
+            #if self.Y is not None:
+            #    self.elbo_terms.update({"obs_response_" + str(i):[] for i in range(len(self.Y))})
 
         self.gradient_norms = defaultdict(list)
         
@@ -380,11 +387,11 @@ class spFA:
                 loss = self.svi.step(idx=self.idx, subsample=self.subsample)
                 # track loss
                 self.history.append(loss)
-                if step == 0:
-                    for name, value in pyro.get_param_store().named_parameters():
-                        value.register_hook(
-                            lambda g, name = name: self.gradient_norms[name].append(g.norm(dim=0))
-                        )
+                #if step == 0:
+                #    for name, value in pyro.get_param_store().named_parameters():
+                #        value.register_hook(
+                #            lambda g, name = name: self.gradient_norms[name].append(g.norm(dim=0))
+                #        )
                 if step % self.update_freq == 0:
                     delta = last_elbo - loss
                     if self.verbose:
@@ -394,8 +401,8 @@ class spFA:
                 
                 guide_trace = pyro.poutine.trace(self._spFA_guide).get_trace(idx = self.idx, subsample=0)
                 model_trace = pyro.poutine.trace(pyro.poutine.replay(self._spFA_model, guide_trace)).get_trace(idx = self.idx, subsample=0)
-                for i in self.elbo_terms:
-                    self.elbo_terms[i].append(model_trace.nodes[i]["fn"].log_prob(model_trace.nodes[i]["value"]).sum().detach().cpu().numpy())
+                #for i in self.elbo_terms:
+                #    self.elbo_terms[i].append(model_trace.nodes[i]["fn"].log_prob(model_trace.nodes[i]["value"]).sum().detach().cpu().numpy())
         else:
             for step in range(n_steps):
                 loss = self.svi.step(idx=self.idx, subsample=self.subsample)
@@ -409,7 +416,7 @@ class spFA:
 
         self.isfit = True
         # convert to loss
-        self.elbo_terms = {i:np.stack(self.elbo_terms[i])*-1 for i in self.elbo_terms}
+        #self.elbo_terms = {i:np.stack(self.elbo_terms[i])*-1 for i in self.elbo_terms}
         if predict:
             self.Z = self.predict("Z")
             self.W = []

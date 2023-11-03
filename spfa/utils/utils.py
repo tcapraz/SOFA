@@ -16,13 +16,13 @@ from itertools import product
 
 import scipy.stats as stats
 import pandas as pd
-
+import scanpy as sc
 from typing import Union
 import numpy as np
 import anndata as ad
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 
-def get_ad(data: pd.DataFrame, llh: str="gaussian") -> AnnData:
+def get_ad(data: pd.DataFrame, llh: str="gaussian", select_hvg: bool=False, log: bool=False, scale: bool=False) -> AnnData:
     """
     Convert a numpy array to an AnnData object.
 
@@ -34,12 +34,17 @@ def get_ad(data: pd.DataFrame, llh: str="gaussian") -> AnnData:
         The name of the variable.
     llh : str, optional
         The likelihood of the data. Default is "gaussian".
+    select_hvg: bool, optional
+        whether to select highly variable features
 
     Returns:
     --------
     adata : AnnData
         The converted AnnData object.
     """
+    data =data.loc[:,~data.columns.duplicated()]
+    mask = ~np.any(pd.isnull(data), axis=1)
+
     if llh == "multinomial" or llh == "bernoulli":
         if type(data) !=  int:
             label_encoder = LabelEncoder() 
@@ -60,9 +65,27 @@ def get_ad(data: pd.DataFrame, llh: str="gaussian") -> AnnData:
         adata.var_names = data.columns
     data.index = data.index.astype(str)
     adata.obs_names = data.index.tolist()
-    adata.obsm["mask"] = ~np.any(pd.isnull(data), axis=1)
+    if log:
+        sc.pp.log1p(adata)
+    adata.obsm["mask"] = mask
+
+    if select_hvg:
+        adata_filtered = adata[~np.all(data.isna(),axis=1),:]
+
+        adata = adata[:,~np.any(np.isnan(adata_filtered.X),axis=0)]
+
+        adata_filtered = adata_filtered[:,~np.any(np.isnan(adata_filtered.X),axis=0)]
+
+        sc.pp.highly_variable_genes(adata_filtered, n_top_genes=2000)
+        adata = adata[:,adata_filtered.var["highly_variable"]]
+        adata.var["highly_variable"] = adata_filtered.var["highly_variable"]
+    if scale: 
+        scaler = StandardScaler()
+        adata.X = scaler.fit_transform(adata.X)
+
     adata.X[adata.obsm["mask"] == False] = 0
     adata.uns["llh"] = llh
+
     if llh == "multinomial" or llh == "bernoulli":
         adata.uns["label_map"] = label_mapping
     return adata
