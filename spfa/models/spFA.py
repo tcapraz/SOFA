@@ -56,8 +56,8 @@ class spFA:
             Whether to print fitting progress. The default is True.
     """
     def __init__(self, 
-                 Xmdata: MuData,  
-                 num_factors: int, 
+                 Xmdata: Union[None, MuData]=None,
+                 num_factors: Union[None, int]=None, 
                  Ymdata: Union[None, MuData]=None,  
                  target_llh: Union[None, List[str]]=None, 
                  design: Union[None, np.ndarray]=None, 
@@ -85,9 +85,13 @@ class spFA:
         self.isfit = False
         self.Xmdata = Xmdata
         self.Ymdata = Ymdata
+        if Xmdata is not None:
+            self.X, self.views, self.llh, self.Xmask = self._data_handler()
+            self.scale = np.ones(len(Xmdata.mod))
+            self.num_samples = Xmdata.n_obs
+            self.idx = torch.arange(self.num_samples)
 
-        self.X, self.views, self.llh, self.Xmask = self._data_handler()
-        self.scale = np.ones(len(Xmdata.mod))
+
         self.ard = ard
         self.horseshoe = horseshoe
         self.history = []
@@ -115,9 +119,7 @@ class spFA:
         else:
             self.design = None
 
-        self.num_samples = Xmdata.n_obs
         self.subsample = subsample
-        self.idx = torch.arange(self.num_samples)
     
     def _data_handler(self):
         views = []
@@ -183,8 +185,10 @@ class spFA:
         
         num_samples = X[0].shape[0]
         num_features = [i.shape[1] for i in X]
-
-        sigma_data = pyro.param("sigma_data", torch.ones(num_views, device=device), constraint=pyro.distributions.constraints.positive)
+        
+        sigma_data = []
+        for i in range(num_views):
+            sigma_data.append(pyro.param(f"sigma_data_{i}", torch.ones(num_features[i], device=device), constraint=pyro.distributions.constraints.positive))
         if Y != None:
             sigma_response = pyro.param("sigma_response", torch.ones(num_target_views, device=device), constraint=pyro.distributions.constraints.positive)
 
@@ -344,7 +348,120 @@ class spFA:
             
         with data_plate as ind:
             pyro.sample("Z", dist.Normal(Z_loc[ind,:], Z_scale[ind,:]).to_event(1))
-     
+    
+    def _simulate(self, sigma_data, num_views, num_features, num_samples,num_factors,llh, num_target_views=None,sigma_response=None, target_llh=None, design=None, return_data = False, k=None, y_dim=None):
+
+        
+        device = self.device
+        if num_target_views is not None:
+            supervised_factors = torch.sum(torch.any(design!=0, dim=0))
+        else:
+            supervised_factors = 0
+
+
+        if self.horseshoe:
+            tau = pyro.sample("tau", dist.HalfCauchy(torch.ones(1, device=device)*self.horseshoe_scale_global))
+
+        W = []
+        lam_feature=[]
+        
+        for i in range(num_views):
+            with pyro.plate("factors_{}".format(i), num_factors):
+                if self.ard:
+                    W_scale = pyro.sample("ard_prior_{}".format(i), dist.Gamma(torch.ones(num_features[i], device=device), torch.ones(num_features[i], device=device)).to_event(1))
+                    W_ = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(torch.zeros(num_features[i], device=device), 1 / W_scale).to_event(1))
+                else:
+                    W_ = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(torch.zeros(num_features[i], device=device), torch.ones(num_features[i], device=device)).to_event(1))
+                if self.horseshoe:
+                    lam_feature_ = pyro.sample("lam_feature_{}".format(i), dist.HalfCauchy(torch.ones(num_features[i], device=device)*self.horseshoe_scale_feature).to_event(1))
+                    #lam_factor = pyro.sample("lam_factor_{}".format(i), dist.HalfCauchy(torch.ones(1, device=device)*self.horseshoe_scale_factor))
+                    W_ = pyro.deterministic("W_{}".format(i), (W_ * lam_feature_**2  * tau**2))
+                else:
+                    W_ = pyro.deterministic("W_{}".format(i), W_)
+            if self.horseshoe:
+                lam_feature.append(lam_feature_)
+            W.append(W_)
+
+        if supervised_factors > 0:
+            beta = []
+            beta0 = []
+            for i in range(num_target_views):
+                with pyro.plate(f"betas_{i}", int(torch.sum(design[i,:]))):
+                    if target_llh[i] == "multinomial":
+                        beta_ = pyro.sample(f"beta_{i}", dist.Normal(torch.zeros(self.k[i], device=device), torch.ones(self.k[i], device=device)).to_event(1))
+                    else:
+                        beta_ = pyro.sample(f"beta_{i}", dist.Normal(torch.zeros(y_dim[i], device=device), torch.ones(y_dim[i], device=device)).to_event(1))
+                        beta0_ = pyro.sample(f"beta0_{i}", dist.Normal(torch.zeros(y_dim[i], device=device), torch.ones(y_dim[i], device=device)).to_event(1))
+                if target_llh[i] == "multinomial":
+                    beta0_ = pyro.sample(f"beta0_{i}", dist.Normal(torch.zeros(self.k[i], device=device), torch.ones(self.k[i], device=device)).to_event(1))
+                beta.append(beta_)
+                beta0.append(beta0_)
+              
+
+        data_plate = pyro.plate("data", num_samples)
+
+        with data_plate as ind:
+            ind = ind.flatten()
+            Z = pyro.sample("Z", dist.Normal(torch.zeros(num_factors, device=device), torch.ones(num_factors, device=device)).to_event(1))
+            X_mean = []
+            X =[]
+            Y_mean = []
+            Y = []
+            for i in range(num_views):
+
+                if llh[i] == "bernoulli":
+                    X_mean.append(Z @ W[i])
+                    X_i_mean = pyro.deterministic(f"X_{i}", sigmoid(Z @ W[i]))
+                    X.append(pyro.sample("data_{}".format(i), dist.Bernoulli(sigmoid(X_mean[i])).to_event(1)))
+                else:
+
+                    X_i_mean = pyro.deterministic(f"X_{i}", Z @ W[i])
+                    X_mean.append(X_i_mean)
+                    X.append(pyro.sample("data_{}".format(i), dist.Normal(X_mean[i], sigma_data[i]).to_event(1)))
+            if supervised_factors > 0:
+                for i in range(num_target_views):
+                    Y_mean = Z[:, design[i,:]==1] @ beta[i] + beta0[i]
+                    pyro.deterministic(f"Y_{i}", Y_mean)
+                    if target_llh[i] == "gaussian":
+                        Y.append(pyro.sample(f"obs_response_{i}", dist.Normal(Y_mean, sigma_response[i]).to_event(1)))
+                    elif target_llh[i] == "bernoulli":
+                        Y.append(pyro.sample(f"obs_response_{i}", dist.Bernoulli(sigmoid(y_pred)).to_event(1)))
+                    elif target_llh[i] == "multinomial":
+                        Y.append(pyro.sample(f"obs_response_{i}", dist.Categorical(softmax(y_pred)).to_event(1)))
+        self.X = X
+        self.Y = Y
+        self.llh =llh
+        self.num_factors = num_factors
+        self.supervised_factors =supervised_factors
+        self.design = design                       
+        self.views = np.arange(num_views).astype(str)
+        self.Xmask = [torch.ones(num_samples, dtype=bool).to(self.device) for i in range(num_views)]
+        self.scale = [1 for i in range(num_views)]
+
+        if supervised_factors > 0:
+
+            self.target_views = np.arange(num_target_views).astype(str)
+            self.target_llh = target_llh
+            self.k = k
+
+            self.y_dim = y_dim
+            self.Ymask = [torch.ones(num_samples, dtype=bool).to(self.device) for i in range(num_target_views)]
+            if not hasattr(self, f"target_scale"):
+                self.target_scale = [1 for i in range(num_target_views)]
+        self.num_samples = num_samples
+        self.idx = torch.arange(self.num_samples)
+        
+        if return_data:
+            if self.horseshoe:
+                if supervised_factors > 0:
+                    return X,Y, W,Z, beta, beta0, lam_feature, tau
+                else:
+                    return X, W,Z,  lam_feature, tau
+            elif supervised_factors > 0:
+                return X,Y, W,Z, beta, beta0
+            else:
+                return X, W, Z 
+    
     def fit(self, n_steps=3000, lr=0.005, refit=False, predict=True):
         """
         method to fit the spFA model
@@ -421,10 +538,13 @@ class spFA:
             self.Z = self.predict("Z")
             self.W = []
             self.X_pred = []
+            self.Y_pred = []
             for i in range(len(self.X)):
                 self.W.append(self.predict(f"W_{i}"))
                 self.X_pred.append(self.predict(f"X_{i}"))
-            
+            for i in range(len(self.Y)):
+                self.Y_pred.append(self.predict(f"Y_{i}"))
+
         self.rmse=[np.sqrt(np.sum(np.square(self.X_pred[i]-self.X[i].cpu().numpy()))/(self.X_pred[i].shape[0]*self.X_pred[i].shape[1])) for i in range(len(self.X))]
                 
     def predict(self, site, num_samples=25, num_split=1024, verbose=False):

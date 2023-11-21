@@ -1,3 +1,3 @@
-from .utils import get_ad, calc_var_explained, calc_var_explained_view
+from .utils import get_ad, calc_var_explained, calc_var_explained_view, get_top_loadings, get_gsea_enrichment, get_rmse, get_rmse_target, save, load
 
-__all__ = ["get_ad", "calc_var_explained", "calc_var_explained_view"]
+__all__ = ["get_ad", "calc_var_explained", "calc_var_explained_view", "get_top_loadings", "get_gsea_enrichment", "get_rmse", "get_rmse_target", "save", "load"]

@@ -6,12 +6,15 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import matplotlib
 import scipy.stats as stats
-from ..utils.utils import calc_var_explained, calc_var_explained_view
+from ..utils.utils import calc_var_explained, calc_var_explained_view, get_gsea_enrichment
 from ..models.spFA import spFA
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 from matplotlib.axes import Axes 
+from matplotlib import colors
+import matplotlib.lines as mlines
+import statsmodels.api as sm
+import statsmodels
 
 def plot_weights(
         model: spFA, 
@@ -57,8 +60,8 @@ def plot_top_weights(
         factor: int,
         top_n:  int=10,
         sign: Union[None,str]=None, 
-        highlight: Union[None,str]=None
-        ) -> Axes:
+        highlight: Union[None,str]=None,
+        ax: Union[None,Axes]=None) -> Axes:
     """
     Plot the top weights of a factor in a given view.
 
@@ -108,7 +111,8 @@ def plot_top_weights(
     my_range=range(1,len(topW.index)+1)
  
     # The horizontal plot is made using the hline() function
-    fig, ax = plt.subplots(1)
+    if ax is None:
+        fig, ax = plt.subplots(1)
     ax.hlines(y=my_range, xmin=0, xmax=topW,alpha=0.4)
     ax.scatter(topW, my_range, alpha=1)
      
@@ -117,7 +121,7 @@ def plot_top_weights(
     signoffset = max(topW)/50
     if sign == "-":
         for i in range(len(topW)):
-            ax.annotate("-", (topW[i]+signoffset,i+0.7), fontsize=16)
+            ax.annotate("-", (topW[i]+signoffset*1.4,i+0.65), fontsize=16)
     if sign == "+":
         for i in range(len(topW)):
             ax.annotate("+", (topW[i]+signoffset,i+0.7), fontsize=12)
@@ -129,7 +133,13 @@ def plot_top_weights(
 
     return ax
 
-def plot_variance_explained(model: spFA) -> Axes:
+def plot_variance_explained(
+        model: spFA,
+        horizontal: bool=False,
+        ax: Union[None,Axes]=None,
+        cax: Union[None,Axes]=None
+
+        ) -> Axes:
     """
     Plot the variance explained by each factor for each view.
 
@@ -167,13 +177,25 @@ def plot_variance_explained(model: spFA) -> Axes:
             y_labels[i] = y_labels[i] + f" {i+1}"
     else:
         y_labels = np.arange(1,model.num_factors+1)
-    fig, ax = plt.subplots(1)
+    if horizontal:
+        vexp = vexp.T
+    if ax is None:
+        fig, ax = plt.subplots()
     plot = ax.imshow(vexp, cmap="Blues", origin="lower")
-    ax.set_xlabel("View")
-    ax.set_xticks(ticks = range(len(model.views)), labels= model.views,rotation=90)
-    ax.set_yticks(ticks = range(vexp.shape[0]), labels= y_labels)
-    ax.set_ylabel("Factor")
-    plt.colorbar(plot)
+    if horizontal:
+        ax.set_ylabel("View")
+        ax.set_yticks(ticks = range(len(model.views)), labels= model.views)
+        ax.set_xticks(ticks = range(vexp.shape[1]), labels= y_labels,rotation=90)
+        ax.set_xlabel("Factor")
+    else:
+        ax.set_xlabel("View")
+        ax.set_xticks(ticks = range(len(model.views)), labels= model.views,rotation=90)
+        ax.set_yticks(ticks = range(vexp.shape[0]), labels= y_labels)
+        ax.set_ylabel("Factor")
+    if cax is not None:
+        plt.colorbar(plot, cax=cax)
+    else:
+        plt.colorbar(plot)
     return ax
 
 def plot_variance_explained_factor(model: spFA) -> Axes:
@@ -211,7 +233,7 @@ def plot_variance_explained_factor(model: spFA) -> Axes:
     ax.set_xlabel("View")
     ax.set_ylabel("R2")
     #ax.set_xticks(ticks = range(len(vexp)),rotation=90)
-    return ax
+    return ax, vexp
 
 def plot_variance_explained_view(model: spFA) -> Axes:
     """Plots the variance explained of each view.
@@ -245,7 +267,11 @@ def plot_variance_explained_view(model: spFA) -> Axes:
 
 def plot_factor_covariate_cor(
         model: spFA,
-        metavar: List[int]
+        metavar: List[int],
+        horizontal: bool=False,
+        ax: Union[None,Axes]=None,
+        cax: Union[None,Axes]=None
+
         ) -> Axes:
     """
     Plot the correlation between the factors and covariates.
@@ -286,16 +312,108 @@ def plot_factor_covariate_cor(
     else:
         y_labels = np.arange(1,model.num_factors+1)
     cormat = np.stack(cor)
+    if not horizontal: 
+        cormat = cormat.T
+    divnorm=colors.TwoSlopeNorm(vmin=-1, vcenter=0., vmax=1)
+    
+    if ax is None:
+        fig, ax = plt.subplots()
+    plot = ax.imshow(cormat, cmap="RdBu", origin="lower", norm=divnorm)
+    if horizontal:
+        
+        ax.set_ylabel("Covariate")
+        ax.set_yticks(ticks = range(len(metavar)), labels= metavar)
+        ax.set_xticks(ticks = range(cormat.shape[1]), labels= y_labels, rotation=90)
+        ax.set_xlabel("Factor")
+    else:
+        ax.set_xlabel("Covariate")
+        ax.set_xticks(ticks = range(len(metavar)), labels= metavar, rotation=90)
+        ax.set_yticks(ticks = range(cormat.shape[0]), labels= y_labels)
+        ax.set_ylabel("Factor")
+    if cax is not None:
+        plt.colorbar(plot, cax=cax)
+    else:
+        plt.colorbar(plot)
+    return ax
+
+def plot_factor_covariate_cor_dot(
+        model: spFA,
+        metavar: List[int]
+        ) -> Axes:
+    """
+    Plot the correlation between the factors and covariates.
+
+    Parameters
+    ----------
+    model : spFA
+        The trained spFA model.
+    metavar : list of str
+        The list of covariate names to plot
+
+    Returns
+    -------
+    matplotlib Axes object
+        Heatmap with the correlation between the factors and covariates.
+    """
+    cor = []
+    pvalues = []
+    if not hasattr(model, "Z"):
+        model.Z = model.predict("Z", num_split=10000)
+    for i in metavar:
+        var = model.metadata[i].values
+        mask = ~model.metadata[i].isna()
+        if var.dtype.type is np.string_ or var.dtype.type is np.object_ or var.dtype.type is pd.core.dtypes.dtypes.CategoricalDtypeType:
+            lmap = {l:j for j,l in enumerate(np.unique(var[mask]))}
+            y = np.array([lmap[l] for l in var[mask]])
+        else:
+            y = var[mask]
+        cor.append([stats.pearsonr(model.Z[mask,z], y)[0] for z in range(model.Z.shape[1])])
+        pvalues.append([stats.pearsonr(model.Z[mask,z], y)[1] for z in range(model.Z.shape[1])])
+
+    if model.Ymdata is not None:
+
+        Ymdata = model.Ymdata
+
+        y_labels = model.Ymdata.mod
+        y_labels = ["(" +i +") " for i in y_labels]
+        y_labels = y_labels + ["" for i in range(model.Z.shape[1] - len(y_labels))]
+        y_labels = [i+ str(idx+1) for idx,i in enumerate(y_labels)]
+    else:
+        y_labels = np.arange(1,model.num_factors+1)
+    cormat = np.stack(cor)
     cormat = cormat.T
+    pmat = np.stack(pvalues)
+    pmat = pmat.T
+    padj_mat = statsmodels.stats.multitest.multipletests(pmat.flatten())[1]
+    padj_mat = padj_mat.reshape(pmat.shape)
+    pmat_scaled = -np.log10(padj_mat)
+    pmat_scaled[pmat_scaled > 4] = 4
+    pmat_scaled = pmat_scaled*100
+    
+    
+    x = np.arange(cormat.shape[1])
+    y = np.arange(cormat.shape[0])
+    x, y = np.meshgrid(x, y)
+    
+    divnorm=colors.TwoSlopeNorm(vmin=-1, vcenter=0., vmax=1)
+    pvalue_sizes = [0.01, 0.05, 0.1]  # Replace with your desired p-value sizes
+    pvalue_legend_labels = [f'adjusted p-value Size: {size}'  if size != 0.01 else f'adjusted p-value Size: < 0.01' for size in pvalue_sizes]
+    #pvalue_legend_handles = [plt.scatter([], [], s=10 * -np.log10(size), label=label, color='white', edgecolor='black', alpha=0.7) for size, label in zip(pvalue_sizes, pvalue_legend_labels)]
+    pvalue_legend_handles = [mlines.Line2D([], [], marker='o', markersize=7*-np.log10(size), label=label, color='white', markerfacecolor='white', markeredgecolor='black', alpha=1) for size, label in zip(pvalue_sizes, pvalue_legend_labels)]
 
     fig, ax = plt.subplots(1)
-    plot = ax.imshow(abs(cormat), cmap="Oranges", origin="lower")
+    plot = ax.scatter(x, y, c=cormat, s= pmat_scaled, cmap='RdBu', alpha=1, norm=divnorm)
+
     ax.set_xlabel("Covariate")
     ax.set_xticks(ticks = range(len(metavar)), labels= metavar, rotation=90)
     ax.set_yticks(ticks = range(cormat.shape[0]), labels= y_labels)
     ax.set_ylabel("Factor")
+    legend = plt.legend(handles=pvalue_legend_handles, labels=pvalue_legend_labels, title='P-values',loc='center left', bbox_to_anchor=(1.25, 0.8))
+    plt.setp(legend.get_title(), fontsize='12')
     plt.colorbar(plot)
-    return ax
+    return fig,ax
+
+
 
 def plot_fit(
         model: spFA,
@@ -327,3 +445,25 @@ def plot_fit(
     ax.set_ylabel("X predicted")
     return ax
 
+def plot_enrichment(
+    gene_list: list, 
+    db: str,
+    top_n: int=20
+    )-> Axes:
+    
+    enr = get_gsea_enrichment(gene_list, db=db)
+    res = enr.results.head(top_n)
+    db = enr.results["Gene_set"].unique()
+    
+    categories = list(reversed(res["Term"].tolist()))
+    values = list(reversed(-np.log10(res["Adjusted P-value"])))
+    
+    fig, ax = plt.subplots(1)
+    # Create horizontal bar plot
+    ax.barh(categories, values)
+
+    # Add labels and title
+    ax.set_xlabel('-log10 adjusted p-values')
+    ax.set_ylabel('Terms')
+    plt.title(db)
+    return fig,ax
