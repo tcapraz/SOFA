@@ -69,8 +69,8 @@ class spFA:
                  metadata: Optional[Union[None, DataFrame]]=None, 
                  target_scale: Optional[Union[None, float]]=None,
                  verbose: bool=True,
-                 horseshoe_scale_feature: float=10,
-                 horseshoe_scale_factor: float=10,
+                 horseshoe_scale_feature: float=1,
+                 horseshoe_scale_factor: float=1,
                  horseshoe_scale_global: float=1,
                  seed: Optional[Union[None, int]]=None
                  ):
@@ -205,8 +205,8 @@ class spFA:
                     W_ = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(torch.zeros(num_features[i], device=device), torch.ones(num_features[i], device=device)).to_event(1))
                 if self.horseshoe:
                     lam_feature = pyro.sample("lam_feature_{}".format(i), dist.HalfCauchy(torch.ones(num_features[i], device=device)*self.horseshoe_scale_feature).to_event(1))
-                    #lam_factor = pyro.sample("lam_factor_{}".format(i), dist.HalfCauchy(torch.ones(1, device=device)*self.horseshoe_scale_factor))
-                    W_ = pyro.deterministic("W_{}".format(i), (W_ * lam_feature**2  * tau**2))
+                    lam_factor = pyro.sample("lam_factor_{}".format(i), dist.HalfCauchy(torch.ones(1, device=device)*self.horseshoe_scale_factor))
+                    W_ = pyro.deterministic("W_{}".format(i), (W_.T * lam_feature.T *lam_factor  * tau).T)
                 else:
                     W_ = pyro.deterministic("W_{}".format(i), W_)
 
@@ -330,7 +330,7 @@ class spFA:
             W_loc.append(pyro.param("W_loc_{}".format(i), torch.zeros((num_factors, num_features[i]), device=device)))
             if self.horseshoe:
                 lam_feature_loc.append(pyro.param("lam_feature_loc_{}".format(i), torch.ones((num_factors, num_features[i]), device=device), constraint=dist.constraints.positive))
-                #lam_factor_loc.append(pyro.param("lam_factor_loc_{}".format(i), torch.ones(num_factors, device=device), constraint=dist.constraints.positive))
+                lam_factor_loc.append(pyro.param("lam_factor_loc_{}".format(i), torch.ones(num_factors, device=device), constraint=dist.constraints.positive))
 
             with pyro.plate("factors_{}".format(i), num_factors):
                 if self.ard:
@@ -340,7 +340,7 @@ class spFA:
                     W = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(W_loc[i], W_scale[i]).to_event(1))
                 if self.horseshoe:
                     lam_feature = pyro.sample("lam_feature_{}".format(i), dist.Delta(lam_feature_loc[i]).to_event(1))
-                    #lam_factor = pyro.sample("lam_factor_{}".format(i), dist.Delta(lam_factor_loc[i]))
+                    lam_factor = pyro.sample("lam_factor_{}".format(i), dist.Delta(lam_factor_loc[i]))
         if subsample > 0:
             data_plate = pyro.plate("data", num_samples, subsample_size=subsample)
         else:
