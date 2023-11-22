@@ -193,7 +193,8 @@ class spFA:
             sigma_response = pyro.param("sigma_response", torch.ones(num_target_views, device=device), constraint=pyro.distributions.constraints.positive)
 
         if self.horseshoe:
-            tau = pyro.sample("tau", dist.HalfCauchy(torch.ones(1, device=device)*self.horseshoe_scale_global))
+            with pyro.plate("views", num_views):
+                tau = pyro.sample("tau", dist.HalfCauchy(torch.ones(1, device=device)*self.horseshoe_scale_global))
 
         W = []
         for i in range(num_views):
@@ -206,7 +207,7 @@ class spFA:
                 if self.horseshoe:
                     lam_feature = pyro.sample("lam_feature_{}".format(i), dist.HalfCauchy(torch.ones(num_features[i], device=device)*self.horseshoe_scale_feature).to_event(1))
                     lam_factor = pyro.sample("lam_factor_{}".format(i), dist.HalfCauchy(torch.ones(1, device=device)*self.horseshoe_scale_factor))
-                    W_ = pyro.deterministic("W_{}".format(i), (W_.T * lam_feature.T *lam_factor  * tau).T)
+                    W_ = pyro.deterministic("W_{}".format(i), (W_.T * lam_feature.T *lam_factor  * tau[i]).T)
                 else:
                     W_ = pyro.deterministic("W_{}".format(i), W_)
 
@@ -309,8 +310,9 @@ class spFA:
                         beta0 = pyro.sample(f"beta0_{i}", dist.Normal(beta0_loc[i], beta0_scale[i]).to_event(1))
 
         if self.horseshoe:
-            tau_loc = pyro.param("tau_loc", torch.ones(1, device=device), constraint=dist.constraints.positive)
-            tau = pyro.sample("tau", dist.Delta(tau_loc))
+            tau_loc = pyro.param("tau_loc", torch.ones(num_views, device=device), constraint=dist.constraints.positive)
+            with pyro.plate("views", num_views):
+                tau = pyro.sample("tau", dist.Delta(tau_loc))
             lam_feature_loc = []
             lam_factor_loc = []
         if self.ard:
