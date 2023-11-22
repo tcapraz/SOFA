@@ -197,20 +197,30 @@ class spFA:
                 tau = pyro.sample("tau", dist.HalfCauchy(torch.ones(1, device=device)*self.horseshoe_scale_global))
 
         W = []
+        lam_factor=[]
         for i in range(num_views):
             with pyro.plate("factors_{}".format(i), num_factors):
                 if self.ard:
                     W_scale = pyro.sample("ard_prior_{}".format(i), dist.Gamma(torch.ones(num_features[i], device=device), torch.ones(num_features[i], device=device)).to_event(1))
                     W_ = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(torch.zeros(num_features[i], device=device), 1 / W_scale).to_event(1))
                 else:
-                    W_ = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(torch.zeros(num_features[i], device=device), torch.ones(num_features[i], device=device)).to_event(1))
+                    pass
+                    #W_ = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(torch.zeros(num_features[i], device=device), torch.ones(num_features[i], device=device)).to_event(1))
                 if self.horseshoe:
                     lam_feature = pyro.sample("lam_feature_{}".format(i), dist.HalfCauchy(torch.ones(num_features[i], device=device)*self.horseshoe_scale_feature).to_event(1))
-                    lam_factor = pyro.sample("lam_factor_{}".format(i), dist.HalfCauchy(torch.ones(1, device=device)*self.horseshoe_scale_factor))
-                    W_ = pyro.deterministic("W_{}".format(i), (W_.T * lam_feature.T *lam_factor  * tau[i]).T)
-                else:
+                    lam_factor.append(pyro.sample("lam_factor_{}".format(i), dist.HalfCauchy(torch.ones(1, device=device)*self.horseshoe_scale_factor)))
+                    #W_ = pyro.deterministic("W_{}".format(i), (W_.T * torch.sqrt(lam_feature.T) * torch.sqrt(lam_factor[i])  * torch.sqrt(tau[i])).T)
+                    #print(lam_feature.shape)
+                    #print(torch.unsqueeze(lam_factor[i],1).expand(-1, lam_feature.shape[1]).shape)
+                    factor_scale = torch.unsqueeze(lam_factor[i],1).expand(-1, lam_feature.shape[1])
+                    w_scale = lam_feature * factor_scale  * tau[i]
+                    W_ = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(torch.zeros(num_features[i], device=device), w_scale).to_event(1))
                     W_ = pyro.deterministic("W_{}".format(i), W_)
 
+                else:
+                    W_ = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(torch.zeros(num_features[i], device=device), torch.ones(num_features[i], device=device)).to_event(1))
+
+                    W_ = pyro.deterministic("W_{}".format(i), W_)
             W.append(W_)
 
         if supervised_factors > 0:
@@ -310,11 +320,17 @@ class spFA:
                         beta0 = pyro.sample(f"beta0_{i}", dist.Normal(beta0_loc[i], beta0_scale[i]).to_event(1))
 
         if self.horseshoe:
-            tau_loc = pyro.param("tau_loc", torch.ones(num_views, device=device), constraint=dist.constraints.positive)
+            tau_loc = pyro.param("tau_loc", torch.ones(num_views, device=device))
+            tau_scale = pyro.param("tau_scale", torch.ones(num_views, device=device), constraint=dist.constraints.positive)
+
             with pyro.plate("views", num_views):
-                tau = pyro.sample("tau", dist.Delta(tau_loc))
+                #tau = pyro.sample("tau", dist.Delta(tau_loc))
+                tau = pyro.sample("tau", dist.LogNormal(tau_loc, tau_scale))
+
             lam_feature_loc = []
             lam_factor_loc = []
+            lam_feature_scale = []
+            lam_factor_scale = []
         if self.ard:
             gamma_alpha = []
             gamma_beta = []
@@ -331,8 +347,11 @@ class spFA:
 
             W_loc.append(pyro.param("W_loc_{}".format(i), torch.zeros((num_factors, num_features[i]), device=device)))
             if self.horseshoe:
-                lam_feature_loc.append(pyro.param("lam_feature_loc_{}".format(i), torch.ones((num_factors, num_features[i]), device=device), constraint=dist.constraints.positive))
-                lam_factor_loc.append(pyro.param("lam_factor_loc_{}".format(i), torch.ones(num_factors, device=device), constraint=dist.constraints.positive))
+                lam_feature_loc.append(pyro.param("lam_feature_loc_{}".format(i), torch.ones((num_factors, num_features[i]), device=device)))
+                lam_feature_scale.append(pyro.param("lam_feature_scale_{}".format(i), torch.ones((num_factors, num_features[i]), device=device), constraint=dist.constraints.positive))
+
+                lam_factor_loc.append(pyro.param("lam_factor_loc_{}".format(i), torch.ones(num_factors, device=device)))
+                lam_factor_scale.append(pyro.param("lam_factor_scale_{}".format(i), torch.ones(num_factors, device=device), constraint=dist.constraints.positive))
 
             with pyro.plate("factors_{}".format(i), num_factors):
                 if self.ard:
@@ -341,8 +360,10 @@ class spFA:
                 else:
                     W = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(W_loc[i], W_scale[i]).to_event(1))
                 if self.horseshoe:
-                    lam_feature = pyro.sample("lam_feature_{}".format(i), dist.Delta(lam_feature_loc[i]).to_event(1))
-                    lam_factor = pyro.sample("lam_factor_{}".format(i), dist.Delta(lam_factor_loc[i]))
+                    #lam_feature = pyro.sample("lam_feature_{}".format(i), dist.Delta(lam_feature_loc[i]).to_event(1))
+                    #lam_factor = pyro.sample("lam_factor_{}".format(i), dist.Delta(lam_factor_loc[i]))
+                    lam_feature = pyro.sample("lam_feature_{}".format(i), dist.LogNormal(lam_feature_loc[i],lam_feature_scale[i]).to_event(1))
+                    lam_factor = pyro.sample("lam_factor_{}".format(i), dist.LogNormal(lam_factor_loc[i], lam_factor_scale[i]))
         if subsample > 0:
             data_plate = pyro.plate("data", num_samples, subsample_size=subsample)
         else:
@@ -544,8 +565,9 @@ class spFA:
             for i in range(len(self.X)):
                 self.W.append(self.predict(f"W_{i}"))
                 self.X_pred.append(self.predict(f"X_{i}"))
-            for i in range(len(self.Y)):
-                self.Y_pred.append(self.predict(f"Y_{i}"))
+            if self.Y is not None:
+                for i in range(len(self.Y)):
+                    self.Y_pred.append(self.predict(f"Y_{i}"))
 
         self.rmse=[np.sqrt(np.sum(np.square(self.X_pred[i]-self.X[i].cpu().numpy()))/(self.X_pred[i].shape[0]*self.X_pred[i].shape[1])) for i in range(len(self.X))]
                 
