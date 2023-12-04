@@ -14,6 +14,8 @@ from muon import MuData
 from sklearn import preprocessing
 from pandas import DataFrame
 from collections import defaultdict
+from anndata import AnnData
+import pandas as pd
 
 sigmoid = nn.Sigmoid()
 softmax = nn.Softmax(dim=1)
@@ -91,6 +93,7 @@ class spFA:
             self.num_samples = Xmdata.n_obs
             self.idx = torch.arange(self.num_samples)
 
+        self.total_n_features = np.sum([self.Xmdata.mod[i].X.shape[1] for i in self.Xmdata.mod])
 
         self.ard = ard
         self.horseshoe = horseshoe
@@ -104,10 +107,11 @@ class spFA:
 
         if Ymdata is not None:
             self.Y, self.target_views, self.target_llh, self.k, self.y_dim, self.Ymask  = self._target_handler()
+            self.relative_target_scale = target_scale
             if target_scale is None:
-                self.target_scale = np.ones(len(Ymdata.mod))
+                self.target_scale = np.ones(len(Ymdata.mod))*0.1*self.total_n_features
             else:
-                self.target_scale = target_scale
+                self.target_scale = np.array(target_scale)*self.total_n_features
         else:
             self.Y = None
             self.target_llh = None
@@ -590,7 +594,53 @@ class spFA:
                 torch.cuda.empty_cache()
         return np.concatenate(pred)
     
-   
+    def save_as_mudata(self):
+        if not hasattr(self, f"W"):
+            self.Z = self.predict("Z")
+        if not hasattr(self, f"W"):
+            self.W = [self.predict(f"W_{i}") for i in range(len(self.X))]
+        if not hasattr(self, f"X_pred"):
+            self.X_pred = [self.predict(f"X_{i}") for i in range(len(self.X))]
+        if not hasattr(self, f"Y_pred") and self.Y is not None:
+            self.Y_pred = [self.predict(f"Y_{i}") for i in range(len(self.Y))]
+        
+        #X = [AnnData(pd.DataFrame(self.X_pred[i], columns=self.Xmdata.mod[list(self.Xmdata.mod.keys())[i]].var_names)) for i in range(len(self.X)) ]
+        #datadict = {f"X_pred_{i}": X[i] for i in range(len(self.X))}
+        datadict = self.Xmdata.mod.copy()
+        if self.Y is not None:
+            datadict.update(self.Ymdata.mod)
+
+        mdata = MuData(datadict)
+        mdata.uns["Z"] = self.Z
+        for i,m in enumerate(self.Xmdata.mod):
+            #W = pd.DataFrame(self.W[i], columns=self.Xmdata.mod[list(self.Xmdata.mod.keys())[i]].var_names)
+            mdata.uns[f"W_{m}"] = self.W[i]
+        #mdata.uns[f"W"] = self.W
+
+        mdata.uns["history"] = self.history
+        mdata.uns["seed"] = self.seed
+        #mdata.uns["rmse"] = self.rmse
+        #for i in self.Xmdata.mod:
+            #mdata.uns[f"X_{i}"] = self.Xmdata.mod[i]
+        #if self.Y is not None:
+            #for i in self.Ymdata.mod:
+                #mdata.uns[f"Y_{i}"] = self.Ymdata.mod[i]
+        #mdata.uns["X_pred"] = self.X_pred
+        if self.Y is not None:
+            #mdata.uns["Y_pred"] = self.Y_pred
+            mdata.uns["target_mod"] = list(self.Ymdata.mod.keys())
+        else:
+            mdata.uns["target_mod"] = None
+
+        mdata.uns["input_design"] = self.design.cpu().numpy()
+        mdata.uns["input_num_factors"] = self.num_factors
+        mdata.uns["target_scale"] = self.relative_target_scale
+        mdata.uns["ard"] = self.ard
+        mdata.uns["horseshoe"] = self.horseshoe
+        # cant store metadata as it often has many mixed columns (dtype object)
+        #mdata.uns["metadata"] = self.metadata
+        return mdata
+
     def _get_param(self, param):
         """
         get fitted parameters

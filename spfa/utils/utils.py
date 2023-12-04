@@ -13,6 +13,7 @@ from muon import MuData
 from sklearn.preprocessing import LabelEncoder
 from anndata import AnnData
 from itertools import product
+from ..models.spFA import spFA
 
 import scipy.stats as stats
 import pandas as pd
@@ -52,6 +53,7 @@ def get_ad(data: pd.DataFrame, llh: str="gaussian", select_hvg: bool=False, log:
             label_encoder = LabelEncoder() 
             # Apply LabelEncoder to each column
             encoded_data = data.values.flatten()
+            
             encoded_data = label_encoder.fit_transform(encoded_data)
             encoded_data = encoded_data.reshape(data.shape)
             adata = AnnData(encoded_data, dtype=np.float32)
@@ -87,9 +89,11 @@ def get_ad(data: pd.DataFrame, llh: str="gaussian", select_hvg: bool=False, log:
 
     adata.X[adata.obsm["mask"] == False] = 0
     adata.uns["llh"] = llh
-
-    if llh == "multinomial" or llh == "bernoulli":
-        adata.uns["label_map"] = label_mapping
+    
+    adata.obsm["mask"] = adata.obsm["mask"].values
+    
+    #if llh == "multinomial" or llh == "bernoulli":
+    #    adata.uns["label_map"] = label_mapping
     return adata
 
 
@@ -169,3 +173,32 @@ def load(model_filename, param_filename):
     dict_.load(param_filename)
     return model
     
+def load_model(mudata_filename):
+    mdata = mu.read(mudata_filename)
+    target_mod = mdata.uns["target_mod"]
+    if target_mod is not None:
+        Ymdata = MuData({i:mdata.mod[i] for i in target_mod})
+    Xmdata = MuData({i:mdata.mod[i] for i in mdata.mod if i not in target_mod})
+    num_factors = mdata.uns["input_num_factors"]
+    design = mdata.uns["input_design"]
+    # TODO find way to save and load mixed column metadata
+    #metadata = mdata.uns["metadata"]
+    ard = mdata.uns["ard"]
+    horseshoe = mdata.uns["horseshoe"]
+    target_scale = mdata.uns["target_scale"]
+    seed = mdata.uns["seed"]
+    model = spFA(Xmdata, 
+                  num_factors=num_factors, 
+                  Ymdata = Ymdata,
+                  design = torch.tensor(design),
+                  device=torch.device('cuda'),
+                  ard=ard,
+                  horseshoe=horseshoe,
+                  subsample=0,
+                  target_scale=target_scale,
+                  seed=seed)
+    model.Z = mdata.uns["Z"]
+    W = [mdata.uns[f"W_{i}"] for i in Xmdata.mod]
+    model.W = W
+    model.history = mdata.uns["history"]
+    return model

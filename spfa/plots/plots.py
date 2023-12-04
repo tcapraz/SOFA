@@ -196,7 +196,7 @@ def plot_variance_explained(
         plt.colorbar(plot, cax=cax)
     else:
         plt.colorbar(plot)
-    return ax
+    return ax, vexp
 
 def plot_variance_explained_factor(model: spFA) -> Axes:
 
@@ -232,7 +232,7 @@ def plot_variance_explained_factor(model: spFA) -> Axes:
     plot = ax.bar(["Factor"+ str(i+1) for  i in range(len(vexp))], vexp)
     ax.set_xlabel("View")
     ax.set_ylabel("R2")
-    #ax.set_xticks(ticks = range(len(vexp)),rotation=90)
+    ax.set_xticklabels(["Factor"+ str(i+1) for  i in range(len(vexp))],rotation=90)
     return ax, vexp
 
 def plot_variance_explained_view(model: spFA) -> Axes:
