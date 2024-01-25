@@ -46,6 +46,8 @@ def get_ad(data: pd.DataFrame, llh: str="gaussian", select_hvg: bool=False, log:
         The converted AnnData object.
     """
     data =data.loc[:,~data.columns.duplicated()]
+    data_ = data.loc[~np.all(pd.isnull(data), axis=1),:]
+    data = data.loc[:,~np.any(pd.isnull(data_), axis=0)]
     mask = ~np.any(pd.isnull(data), axis=1)
     mask.index = mask.index.astype(str)
     if llh == "multinomial" or llh == "bernoulli":
@@ -158,34 +160,34 @@ def get_rmse_target(model):
         rmse += np.sqrt(np.sum(np.square(i-j))/(i.shape[0]*i.shape[1]))
     return rmse
 
-def save(model, model_filename, param_filename):
-    with open(model_filename, "wb") as f:
-        pickle.dump(model, f)
-    dict_ = pyro.get_param_store()
-
-    dict_.save(param_filename)
-
-def load(model_filename, param_filename):
-    with open(filename, "rb") as f:
-        model = pickle.load(f)
-    dict_ = pyro.get_param_store()
-
-    dict_.load(param_filename)
-    return model
+def save_model(model, file_prefix):
+    model_mdata = model.save_as_mudata()
+    model_mdata.write(file_prefix+".h5mu")
     
-def load_model(mudata_filename):
-    mdata = mu.read(mudata_filename)
-    target_mod = mdata.uns["target_mod"]
-    if target_mod is not None:
-        Ymdata = MuData({i:mdata.mod[i] for i in target_mod})
-    Xmdata = MuData({i:mdata.mod[i] for i in mdata.mod if i not in target_mod})
+    dict_ = pyro.get_param_store()
+    dict_.save(file_prefix +".save")
+    return file_prefix +".h5mu", file_prefix +".save"
+    
+
+    
+def load_model(file_prefix):
+    mdata = mu.read(file_prefix +".h5mu")
+    if "target_mod" in list(mdata.uns.keys()):
+        Ymdata = MuData({i:mdata.mod[i] for i in mdata.uns["target_mod"]})
+        Xmdata = MuData({i:mdata.mod[i] for i in mdata.mod if i not in mdata.uns["target_mod"]})
+        target_scale = mdata.uns["target_scale"]
+        design = mdata.uns["input_design"]
+    else:
+        Xmdata = MuData({i:mdata.mod[i] for i in mdata.mod})
+        Ymdata = None
+        design = np.array(0)
+        target_scale= None
     num_factors = mdata.uns["input_num_factors"]
-    design = mdata.uns["input_design"]
     # TODO find way to save and load mixed column metadata
     #metadata = mdata.uns["metadata"]
     ard = mdata.uns["ard"]
     horseshoe = mdata.uns["horseshoe"]
-    target_scale = mdata.uns["target_scale"]
+
     seed = mdata.uns["seed"]
     model = spFA(Xmdata, 
                   num_factors=num_factors, 
@@ -200,5 +202,11 @@ def load_model(mudata_filename):
     model.Z = mdata.uns["Z"]
     W = [mdata.uns[f"W_{i}"] for i in Xmdata.mod]
     model.W = W
+    model.X_pred =[mdata.uns[f"X_{i}"] for i in range(len(Xmdata.mod))]
     model.history = mdata.uns["history"]
+    
+    # load pyro paramstore
+    dict_ = pyro.get_param_store()
+
+    dict_.load(file_prefix+".save")
     return model
