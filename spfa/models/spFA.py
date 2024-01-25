@@ -82,7 +82,9 @@ class spFA:
             pyro.set_rng_seed(seed)
         self.seed = seed
         self.num_factors = num_factors
-
+        self.local_sites = ["Z", "X"]
+        self.global_sites = ["W", "tau", "lam"]
+        
         self.device = device
         self.isfit = False
         self.Xmdata = Xmdata
@@ -94,7 +96,6 @@ class spFA:
             self.idx = torch.arange(self.num_samples)
 
         self.total_n_features = np.sum([self.Xmdata.mod[i].X.shape[1] for i in self.Xmdata.mod])
-
         self.ard = ard
         self.horseshoe = horseshoe
         self.history = []
@@ -104,12 +105,13 @@ class spFA:
         self.horseshoe_scale_feature = horseshoe_scale_feature 
         self.horseshoe_scale_factor = horseshoe_scale_factor
         self.horseshoe_scale_global = horseshoe_scale_global
-
+        
         if Ymdata is not None:
             self.Y, self.target_views, self.target_llh, self.k, self.y_dim, self.Ymask  = self._target_handler()
             self.relative_target_scale = target_scale
             if target_scale is None:
                 self.target_scale = np.ones(len(Ymdata.mod))*0.1*self.total_n_features
+                self.relative_target_scale = np.ones(len(Ymdata.mod))*0.1
             else:
                 self.target_scale = np.array(target_scale)*self.total_n_features
         else:
@@ -217,13 +219,11 @@ class spFA:
                     #print(lam_feature.shape)
                     #print(torch.unsqueeze(lam_factor[i],1).expand(-1, lam_feature.shape[1]).shape)
                     factor_scale = torch.unsqueeze(lam_factor[i],1).expand(-1, lam_feature.shape[1])
-                    w_scale = lam_feature * factor_scale  * tau[i]
+                    w_scale = lam_feature * factor_scale  * tau[i]+ 1e-20
                     W_ = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(torch.zeros(num_features[i], device=device), w_scale).to_event(1))
                     W_ = pyro.deterministic("W_{}".format(i), W_)
-
                 else:
                     W_ = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(torch.zeros(num_features[i], device=device), torch.ones(num_features[i], device=device)).to_event(1))
-
                     W_ = pyro.deterministic("W_{}".format(i), W_)
             W.append(W_)
 
@@ -257,12 +257,12 @@ class spFA:
                         if llh[i] == "bernoulli":
                             X_pred.append(Z @ W[i])
                             X_i = pyro.deterministic(f"X_{i}", sigmoid(Z @ W[i]))
-                            for j in range(num_factors):
-                                X_ij = pyro.deterministic(f"X_{i}{j}", sigmoid(Z[:, [j]] @ W[i][[j], :]))
+                            #for j in range(num_factors):
+                            #    X_ij = pyro.deterministic(f"X_{i}{j}", sigmoid(Z[:, [j]] @ W[i][[j], :]))
                             pyro.sample("obs_data_{}".format(i), dist.Bernoulli(sigmoid(X_pred[i])).to_event(1), obs=X[i][ind,:])
                         else:
-                            for j in range(num_factors):
-                                X_ij = pyro.deterministic(f"X_{i}{j}", Z[:, [j]] @ W[i][[j], :])
+                            #for j in range(num_factors):
+                            #    X_ij = pyro.deterministic(f"X_{i}{j}", Z[:, [j]] @ W[i][[j], :])
                             X_i = pyro.deterministic(f"X_{i}", Z @ W[i])
                             X_pred.append(X_i)
                             pyro.sample("obs_data_{}".format(i), dist.Normal(X_i, sigma_data[i]).to_event(1), obs=X[i][ind,:])
@@ -363,6 +363,7 @@ class spFA:
                     W = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(W_loc[i], 1 / W_scale).to_event(1))
                 else:
                     W = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(W_loc[i], W_scale[i]).to_event(1))
+
                 if self.horseshoe:
                     #lam_feature = pyro.sample("lam_feature_{}".format(i), dist.Delta(lam_feature_loc[i]).to_event(1))
                     #lam_factor = pyro.sample("lam_factor_{}".format(i), dist.Delta(lam_factor_loc[i]))
@@ -374,8 +375,9 @@ class spFA:
             data_plate = pyro.plate("data", num_samples, subsample=idx)
             
         with data_plate as ind:
-            pyro.sample("Z", dist.Normal(Z_loc[ind,:], Z_scale[ind,:]).to_event(1))
-    
+            Z = pyro.sample("Z", dist.Normal(Z_loc[ind,:], Z_scale[ind,:]).to_event(1))
+
+            
     def _simulate(self, sigma_data, num_views, num_features, num_samples,num_factors,llh, num_target_views=None,sigma_response=None, target_llh=None, design=None, return_data = False, k=None, y_dim=None):
 
         
@@ -573,11 +575,15 @@ class spFA:
                 for i in range(len(self.Y)):
                     self.Y_pred.append(self.predict(f"Y_{i}"))
 
-        self.rmse=[np.sqrt(np.sum(np.square(self.X_pred[i]-self.X[i].cpu().numpy()))/(self.X_pred[i].shape[0]*self.X_pred[i].shape[1])) for i in range(len(self.X))]
+            self.rmse=[np.sqrt(np.sum(np.square(self.X_pred[i]-self.X[i].cpu().numpy()))/(self.X_pred[i].shape[0]*self.X_pred[i].shape[1])) for i in range(len(self.X))]
                 
     def predict(self, site, num_samples=25, num_split=1024, verbose=False):
         pred = []
-        split_obs = torch.split(self.idx, num_split)
+        local = np.any([i in site for i in self.local_sites])
+        if local:
+            split_obs = torch.split(self.idx, num_split)
+        else:
+            split_obs = [self.idx[0:1]]
         if verbose:
             pbar_pred = tqdm(range(len(split_obs)))
             for i in pbar_pred:
@@ -612,10 +618,13 @@ class spFA:
 
         mdata = MuData(datadict)
         mdata.uns["Z"] = self.Z
+        
+        mdata.uns["Z"] = self.Z
+
         for i,m in enumerate(self.Xmdata.mod):
             #W = pd.DataFrame(self.W[i], columns=self.Xmdata.mod[list(self.Xmdata.mod.keys())[i]].var_names)
             mdata.uns[f"W_{m}"] = self.W[i]
-        #mdata.uns[f"W"] = self.W
+            mdata.uns[f"X_{i}"] = self.X_pred[i]
 
         mdata.uns["history"] = self.history
         mdata.uns["seed"] = self.seed
@@ -629,12 +638,13 @@ class spFA:
         if self.Y is not None:
             #mdata.uns["Y_pred"] = self.Y_pred
             mdata.uns["target_mod"] = list(self.Ymdata.mod.keys())
+            mdata.uns["input_design"] = self.design.cpu().numpy()
+            mdata.uns["target_scale"] = self.relative_target_scale
+
+
         else:
             mdata.uns["target_mod"] = None
-
-        mdata.uns["input_design"] = self.design.cpu().numpy()
         mdata.uns["input_num_factors"] = self.num_factors
-        mdata.uns["target_scale"] = self.relative_target_scale
         mdata.uns["ard"] = self.ard
         mdata.uns["horseshoe"] = self.horseshoe
         # cant store metadata as it often has many mixed columns (dtype object)
