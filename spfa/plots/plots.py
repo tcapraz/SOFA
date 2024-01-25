@@ -15,6 +15,8 @@ from matplotlib import colors
 import matplotlib.lines as mlines
 import statsmodels.api as sm
 import statsmodels
+import seaborn as sns
+from matplotlib.ticker import FuncFormatter
 
 def plot_weights(
         model: spFA, 
@@ -129,7 +131,7 @@ def plot_top_weights(
     ax.set_ylabel('Features')
     if highlight != None:
         for j in highlight_id:
-            ax.setp(ax.get_yticklabels()[j], color='red')
+            plt.setp(ax.get_yticklabels()[j], color='red')
 
     return ax
 
@@ -445,25 +447,70 @@ def plot_fit(
     ax.set_ylabel("X predicted")
     return ax
 
+def abs_formatter(x, pos):
+    return f"{abs(x):.0f}"
+
 def plot_enrichment(
     gene_list: list, 
-    db: str,
-    top_n: int=20
+    db: list,
+    top_n: list,
+    gene_list2: Union[None,list]=None,
+    db2: Union[None,list]=None,
+    top_n2: Union[None,list]=None,
+    ax: Union[None,Axes]=None,
     )-> Axes:
     
-    enr = get_gsea_enrichment(gene_list, db=db)
-    res = enr.results.head(top_n)
-    db = enr.results["Gene_set"].unique()
-    
-    categories = list(reversed(res["Term"].tolist()))
-    values = list(reversed(-np.log10(res["Adjusted P-value"])))
-    
-    fig, ax = plt.subplots(1)
-    # Create horizontal bar plot
-    ax.barh(categories, values)
+    if db2 is not None:
+        db_all = np.unique(db+db2)
+    else:
+        db_all = db
+    cblind_colors = {db_all[i]:sns.color_palette("colorblind", as_cmap=True)[i] for i in range(len(db_all))}
 
+    categories = []
+    values = []
+    dbs = []
+    for i in range(len(db)):
+        enr = get_gsea_enrichment(gene_list, db=db[i])
+        res = enr.results.head(top_n[i])
+        categories_ = list(reversed(res["Term"].tolist()))
+        categories_ = [j.split("(GO")[0] for j in categories_]
+        categories_ = [j.split("R-HSA")[0] for j in categories_]
+        categories.append(categories_)
+        values.append(list(reversed(-np.log10(res["Adjusted P-value"]))))
+        dbs.append(db[i])
+        
+    if gene_list2 is not None:
+        categories2 = []
+        values2 = []
+        dbs2 = []
+        for i in range(len(db2)):
+            enr = get_gsea_enrichment(gene_list2, db=db2[i])
+            res = enr.results.head(top_n2[i])
+            categories_ = list(reversed(res["Term"].tolist()))
+            categories_ = [j.split("(GO")[0] for j in categories_]
+            categories_ = [j.split("R-HSA")[0] for j in categories_]
+            categories2.append(categories_)
+            values2.append(list(reversed(np.log10(res["Adjusted P-value"]))))
+
+            dbs2.append(db2[i])
+    if ax is None:
+        fig, ax = plt.subplots(1)
+    # Create horizontal bar plot
+    for i in range(len(categories)):
+        ax.barh(categories[i], values[i], label=dbs[i], color = cblind_colors[dbs[i]])
+    if gene_list2 is not None:  
+        for i in range(len(categories2)):
+            ax.barh(categories2[i], values2[i],label=dbs2[i], color = cblind_colors[dbs2[i]])
+
+    #ax.axvline(x=-np.log10(0.05), ymin=0, ymax=np.sum(top_n), linestyle="--", c="black")
     # Add labels and title
     ax.set_xlabel('-log10 adjusted p-values')
     ax.set_ylabel('Terms')
-    plt.title(db)
-    return fig,ax
+    #ticks =  ax.get_xticks()
+    #ax.set_xticklabels([int(abs(tick)) for tick in ticks])
+    plt.gca().xaxis.set_major_formatter(FuncFormatter(abs_formatter))
+    #plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2))
+    handles, labels = ax.get_legend_handles_labels()
+    unique = [(h, l) for i, (h, l) in enumerate(zip(handles, labels)) if l not in labels[:i]]
+    ax.legend(*zip(*unique),loc='upper center', bbox_to_anchor=(0, -0.2), ncol=int(len(db_all)/2))
+    return ax
