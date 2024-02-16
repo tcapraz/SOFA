@@ -512,5 +512,5 @@ def plot_enrichment(
     #plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2))
     handles, labels = ax.get_legend_handles_labels()
     unique = [(h, l) for i, (h, l) in enumerate(zip(handles, labels)) if l not in labels[:i]]
-    ax.legend(*zip(*unique),loc='upper center', bbox_to_anchor=(0, -0.2), ncol=int(len(db_all)/2))
+    ax.legend(*zip(*unique),loc='upper center', bbox_to_anchor=(0, -0.2), ncol=int(len(db_all)/2+1))
     return ax
