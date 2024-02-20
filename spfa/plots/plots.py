@@ -11,6 +11,7 @@ from ..models.spFA import spFA
 import pandas as pd
 import numpy as np
 from matplotlib.axes import Axes 
+from matplotlib.figure import Figure
 from matplotlib import colors
 import matplotlib.lines as mlines
 import statsmodels.api as sm
@@ -203,7 +204,8 @@ def plot_variance_explained(
     return ax, vexp
 
 def plot_variance_explained_group(model: spFA,
-                                  ax: Union[None,Axes]=None
+                                  ax: Union[None,Axes]=None,
+                                  fig: Union[None,Figure]=None,
                                  ) -> Axes:
     """
     Plot the variance explained by each factor for each view.
@@ -226,7 +228,7 @@ def plot_variance_explained_group(model: spFA,
     if not hasattr(model, f"W"):
         model.W = [model.predict(f"W_{i}", num_split=10000) for i in range(len(X))]
     groups = model.groups
-        # TODO calculate group wise variance explained
+    # TODO calculate group wise variance explained
     for g  in np.unique(groups):
         vexp_ = []
         for i in range(len(X)):
@@ -234,8 +236,8 @@ def plot_variance_explained_group(model: spFA,
             groups = groups[mask]
             X_pred_factor = []
             for j in range(model.num_factors):
-                X_pred_factor.append((model.Z[mask,j, np.newaxis] @ model.W[i][np.newaxis,j,:])[groups.values==g,:])
-            vexp_.append(calc_var_explained(X_pred_factor, X[i][mask,:][groups.values==g,:]).reshape(model.num_factors,1))
+                X_pred_factor.append((model.Z[mask,j, np.newaxis] @ model.W[i][np.newaxis,j,:])[groups==g,:])
+            vexp_.append(calc_var_explained(X_pred_factor, X[i][mask,:][groups==g,:]).reshape(model.num_factors,1))
         vexp.append(np.hstack(vexp_))
     if model.Ymdata is not None:
         y_labels = np.array(["" for i in range(model.num_factors)], dtype=object)
@@ -252,9 +254,9 @@ def plot_variance_explained_group(model: spFA,
     if ax is None:
         fig, ax = plt.subplots(ncols=len(np.unique(groups)))
         ax = ax.flatten()
-
+    norm = Normalize(vmin=np.min(np.stack(vexp)), vmax=np.max(np.stack(vexp)))
     for i in range(len(ax)):
-        plot = ax[i].imshow(vexp[i], cmap="Blues", origin="lower")
+        plot = ax[i].imshow(vexp[i], cmap="Blues", origin="lower", norm=norm)
         ax[i].set_xlabel(np.unique(groups)[i])
         ax[i].set_xticks(ticks = range(len(model.views)), labels= model.views,rotation=90)
         if i == 0:
@@ -263,10 +265,10 @@ def plot_variance_explained_group(model: spFA,
         else:
             ax[i].tick_params(left=False)
             ax[i].set(yticklabels=[])  
-        ax[i].set_aspect("auto")
+        #ax[i].set_aspect("auto")
 
     cax = fig.add_axes([0.92, 0.1, 0.02, 0.8]) 
-    norm = Normalize(vmin=np.min(np.stack(vexp)), vmax=np.max(np.stack(vexp)))
+    
 
     # Create the colorbar
     cb = ColorbarBase(cax, norm=norm, cmap="Blues", orientation='vertical')
@@ -522,7 +524,7 @@ def plot_fit(
     return ax
 
 def abs_formatter(x, pos):
-    return f"{abs(x):.0f}"
+    return f"{abs(x):.2f}"
 
 def plot_enrichment(
     gene_list: list, 

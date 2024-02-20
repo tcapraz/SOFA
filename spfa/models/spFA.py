@@ -74,7 +74,8 @@ class spFA:
                  horseshoe_scale_feature: float=1,
                  horseshoe_scale_factor: float=1,
                  horseshoe_scale_global: float=1,
-                 seed: Optional[Union[None, int]]=None
+                 seed: Optional[Union[None, int]]=None,
+                 group_sparsity = False
                  ):
  
         
@@ -105,7 +106,11 @@ class spFA:
         self.horseshoe_scale_feature = horseshoe_scale_feature 
         self.horseshoe_scale_factor = horseshoe_scale_factor
         self.horseshoe_scale_global = horseshoe_scale_global
-        
+        self.group_sparsity = group_sparsity
+        if 'groups' in Xmdata.obsm:
+            self.groups = Xmdata.obsm["groups"].values
+            self.num_groups = len(np.unique(self.groups))
+            
         if Ymdata is not None:
             self.Y, self.target_views, self.target_llh, self.k, self.y_dim, self.Ymask  = self._target_handler()
             self.relative_target_scale = target_scale
@@ -226,6 +231,8 @@ class spFA:
                     W_ = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(torch.zeros(num_features[i], device=device), torch.ones(num_features[i], device=device)).to_event(1))
                     W_ = pyro.deterministic("W_{}".format(i), W_)
             W.append(W_)
+            
+       
 
         if supervised_factors > 0:
             beta = []
@@ -246,10 +253,23 @@ class spFA:
             data_plate = pyro.plate("data", num_samples, subsample_size=subsample)
         else:
             data_plate = pyro.plate("data", num_samples, subsample=idx)
-            
+        if self.group_sparsity:
+            with pyro.plate("groups", self.num_groups):
+                lam_group = pyro.sample("lam_group", dist.HalfCauchy(torch.ones(num_factors, device=device)*10).to_event(1))
+                tau_group = pyro.sample("tau_group", dist.HalfCauchy(torch.ones(1, device=device)*10))
+            z_scale_ = torch.sqrt(tau_group*lam_group.T).T
+            z_scale = torch.ones((num_samples,num_factors), device=device)
+            for i,g in enumerate(np.unique(self.groups)):
+                z_scale[self.groups==g,:] = z_scale_[i,:]
         with data_plate as ind:
             ind = ind.flatten()
-            Z = pyro.sample("Z", dist.Normal(torch.zeros(num_factors, device=device), torch.ones(num_factors, device=device)).to_event(1))
+            if self.group_sparsity:
+                Z_ = pyro.sample("Z_unshrunk", dist.Normal(torch.zeros(num_factors, device=device), torch.ones(num_factors, device=device)).to_event(1))
+                Z = pyro.deterministic(f"Z", Z_ * z_scale[ind])
+            else:
+                Z = pyro.sample("Z", dist.Normal(torch.zeros(num_factors, device=device), torch.ones(num_factors, device=device)).to_event(1))
+            
+
             X_pred = []
             for i in range(num_views):
                 with pyro.poutine.scale(scale=self.scale[i]):
@@ -330,11 +350,11 @@ class spFA:
             with pyro.plate("views", num_views):
                 #tau = pyro.sample("tau", dist.Delta(tau_loc))
                 tau = pyro.sample("tau", dist.LogNormal(tau_loc, tau_scale))
-
-            lam_feature_loc = []
-            lam_factor_loc = []
-            lam_feature_scale = []
-            lam_factor_scale = []
+        
+        lam_feature_loc = []
+        lam_factor_loc = []
+        lam_feature_scale = []
+        lam_factor_scale = []
         if self.ard:
             gamma_alpha = []
             gamma_beta = []
@@ -373,9 +393,21 @@ class spFA:
             data_plate = pyro.plate("data", num_samples, subsample_size=subsample)
         else:
             data_plate = pyro.plate("data", num_samples, subsample=idx)
+        
+        if self.group_sparsity:
+            lam_group_loc = pyro.param("lam_group_loc", torch.ones((self.num_groups, num_factors), device=device))
+            lam_group_scale = pyro.param("lam_group_scale", torch.ones((self.num_groups, num_factors), device=device), constraint=dist.constraints.positive)
+            tau_group_loc = pyro.param("tau_group_loc", torch.ones(self.num_groups, device=device))
+            tau_group_scale = pyro.param("tau_group_scale", torch.ones(self.num_groups, device=device), constraint=dist.constraints.positive)
             
-        with data_plate as ind:
-            Z = pyro.sample("Z", dist.Normal(Z_loc[ind,:], Z_scale[ind,:]).to_event(1))
+            with pyro.plate("groups", self.num_groups):
+                lam_group = pyro.sample("lam_group", dist.LogNormal(lam_group_loc, lam_group_scale).to_event(1))
+                tau_group = pyro.sample("tau_group", dist.LogNormal(tau_group_loc, tau_group_scale))
+            with data_plate as ind:
+                Z = pyro.sample("Z_unshrunk", dist.Normal(Z_loc[ind,:], Z_scale[ind,:]).to_event(1))
+        else:
+            with data_plate as ind:
+                Z = pyro.sample("Z", dist.Normal(Z_loc[ind,:], Z_scale[ind,:]).to_event(1))
 
             
     def _simulate(self, sigma_data, num_views, num_features, num_samples,num_factors,llh, num_target_views=None,sigma_response=None, target_llh=None, design=None, return_data = False, k=None, y_dim=None):
