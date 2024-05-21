@@ -43,7 +43,7 @@ class spFA:
         device : torch.device, optional
             Device to fit the model ("cuda" or "cpu"). The default is torch.device('cpu').
         ard : bool, optional
-            Whether to use ARD priors on the loadings. The default is True.
+            Whether to use ARD priors on the loadings (experimental). The default is False. 
         horseshoe : bool, optional
             Whether to use horseshoe priors on the loadings. The default is True.
         update_freq : int, optional
@@ -56,6 +56,14 @@ class spFA:
             Scaling factor for target likelihood. The default is None.
         verbose : bool, optional
             Whether to print fitting progress. The default is True.
+        horseshoe_scale_feature : float, optional
+            Scale for feature-specific horseshoe prior. The default is 1.
+        horseshoe_scale_factor : float, optional
+            Scale for factor-specific horseshoe prior. The default is 1.
+        horseshoe_scale_global : float, optional
+            Scale for global horseshoe prior. The default is 1.
+        seed : int, optional
+            Random seed. The default is None.
     """
     def __init__(self, 
                  Xmdata: Union[None, MuData]=None,
@@ -64,7 +72,7 @@ class spFA:
                  target_llh: Union[None, List[str]]=None, 
                  design: Union[None, np.ndarray]=None, 
                  device: Optional[Literal["cuda", "cpu"]]="cpu", 
-                 ard: bool=True, 
+                 ard: bool=False, 
                  horseshoe: bool=True, 
                  update_freq: int=200, 
                  subsample: int=0, 
@@ -82,7 +90,7 @@ class spFA:
             pyro.set_rng_seed(seed)
         self.seed = seed
         self.num_factors = num_factors
-        self.local_sites = ["Z", "X"]
+        self.local_sites = ["Z", "X", "Y"]
         self.global_sites = ["W", "tau", "lam"]
         
         self.device = device
@@ -95,7 +103,7 @@ class spFA:
             self.num_samples = Xmdata.n_obs
             self.idx = torch.arange(self.num_samples)
 
-        self.total_n_features = np.sum([self.Xmdata.mod[i].X.shape[1] for i in self.Xmdata.mod])
+            self.total_n_features = np.sum([self.Xmdata.mod[i].X.shape[1] for i in self.Xmdata.mod])
         self.ard = ard
         self.horseshoe = horseshoe
         self.history = []
@@ -389,11 +397,12 @@ class spFA:
 
 
         if self.horseshoe:
-            tau = pyro.sample("tau", dist.HalfCauchy(torch.ones(1, device=device)*self.horseshoe_scale_global))
+            tau = pyro.sample("tau", dist.HalfCauchy(torch.ones(num_views, device=device)*self.horseshoe_scale_global))
+            #tau = pyro.sample("tau", dist.LogNormal(torch.zeros(num_views, device=device), torch.ones(num_views, device=device)*self.horseshoe_scale_global))
 
         W = []
         lam_feature=[]
-        
+        lam_factor=[]
         for i in range(num_views):
             with pyro.plate("factors_{}".format(i), num_factors):
                 if self.ard:
@@ -403,8 +412,16 @@ class spFA:
                     W_ = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(torch.zeros(num_features[i], device=device), torch.ones(num_features[i], device=device)).to_event(1))
                 if self.horseshoe:
                     lam_feature_ = pyro.sample("lam_feature_{}".format(i), dist.HalfCauchy(torch.ones(num_features[i], device=device)*self.horseshoe_scale_feature).to_event(1))
-                    #lam_factor = pyro.sample("lam_factor_{}".format(i), dist.HalfCauchy(torch.ones(1, device=device)*self.horseshoe_scale_factor))
-                    W_ = pyro.deterministic("W_{}".format(i), (W_ * lam_feature_**2  * tau**2))
+                    lam_factor.append(pyro.sample("lam_factor_{}".format(i), dist.HalfCauchy(torch.ones(1, device=device)*self.horseshoe_scale_factor)))
+                    #lam_feature_ = pyro.sample("lam_feature_{}".format(i), dist.LogNormal(torch.zeros(num_features[i], device=device), torch.ones(num_features[i], device=device)*self.horseshoe_scale_feature).to_event(1))
+                    #lam_factor.append(pyro.sample("lam_factor_{}".format(i), dist.LogNormal(torch.zeros(1, device=device),torch.ones(1, device=device)*self.horseshoe_scale_factor)))
+                  
+                    factor_scale = torch.unsqueeze(lam_factor[i],1).expand(-1, lam_feature_.shape[1])
+                    #W_ = pyro.deterministic("W_{}".format(i), (W_ * lam_feature_*factor_scale  * tau))
+                    w_scale = lam_feature_ * factor_scale  * tau[i]+ 1e-20
+                    W_ = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(torch.zeros(num_features[i], device=device), w_scale).to_event(1))
+                    W_[torch.abs(W_)>10] = 0
+                    W_ = pyro.deterministic("W_{}".format(i), W_)
                 else:
                     W_ = pyro.deterministic("W_{}".format(i), W_)
             if self.horseshoe:
@@ -419,7 +436,7 @@ class spFA:
                     if target_llh[i] == "multinomial":
                         beta_ = pyro.sample(f"beta_{i}", dist.Normal(torch.zeros(self.k[i], device=device), torch.ones(self.k[i], device=device)).to_event(1))
                     else:
-                        beta_ = pyro.sample(f"beta_{i}", dist.Normal(torch.zeros(y_dim[i], device=device), torch.ones(y_dim[i], device=device)).to_event(1))
+                        beta_ = pyro.sample(f"beta_{i}", dist.Normal(torch.zeros(y_dim[i], device=device), torch.ones(y_dim[i], device=device)*10).to_event(1))
                         beta0_ = pyro.sample(f"beta0_{i}", dist.Normal(torch.zeros(y_dim[i], device=device), torch.ones(y_dim[i], device=device)).to_event(1))
                 if target_llh[i] == "multinomial":
                     beta0_ = pyro.sample(f"beta0_{i}", dist.Normal(torch.zeros(self.k[i], device=device), torch.ones(self.k[i], device=device)).to_event(1))
@@ -454,9 +471,9 @@ class spFA:
                     if target_llh[i] == "gaussian":
                         Y.append(pyro.sample(f"obs_response_{i}", dist.Normal(Y_mean, sigma_response[i]).to_event(1)))
                     elif target_llh[i] == "bernoulli":
-                        Y.append(pyro.sample(f"obs_response_{i}", dist.Bernoulli(sigmoid(y_pred)).to_event(1)))
+                        Y.append(pyro.sample(f"obs_response_{i}", dist.Bernoulli(sigmoid(Y_mean)).to_event(1)))
                     elif target_llh[i] == "multinomial":
-                        Y.append(pyro.sample(f"obs_response_{i}", dist.Categorical(softmax(y_pred)).to_event(1)))
+                        Y.append(pyro.sample(f"obs_response_{i}", dist.Categorical(softmax(Y_mean)).to_event(1)))
         self.X = X
         self.Y = Y
         self.llh =llh
@@ -466,7 +483,7 @@ class spFA:
         self.views = np.arange(num_views).astype(str)
         self.Xmask = [torch.ones(num_samples, dtype=bool).to(self.device) for i in range(num_views)]
         self.scale = [1 for i in range(num_views)]
-
+        self.total_n_features = np.sum(num_features)
         if supervised_factors > 0:
 
             self.target_views = np.arange(num_target_views).astype(str)
@@ -476,17 +493,22 @@ class spFA:
             self.y_dim = y_dim
             self.Ymask = [torch.ones(num_samples, dtype=bool).to(self.device) for i in range(num_target_views)]
             if not hasattr(self, f"target_scale"):
-                self.target_scale = [1 for i in range(num_target_views)]
+                self.target_scale = np.ones(num_target_views)*0.1*self.total_n_features
         self.num_samples = num_samples
         self.idx = torch.arange(self.num_samples)
+        X = [i.cpu().numpy() for i in X]
+        W = [i.cpu().numpy() for i in W]
+        Z = Z.cpu().numpy()
         
         if return_data:
             if self.horseshoe:
                 if supervised_factors > 0:
+                    Y = [i.cpu().numpy() for i in Y]
                     return X,Y, W,Z, beta, beta0, lam_feature, tau
                 else:
                     return X, W,Z,  lam_feature, tau
             elif supervised_factors > 0:
+                Y = [i.cpu().numpy() for i in Y]
                 return X,Y, W,Z, beta, beta0
             else:
                 return X, W, Z 
@@ -518,7 +540,7 @@ class spFA:
         if not self.isfit or refit:
             pyro.clear_param_store()
             self.svi = SVI(self._spFA_model, self._spFA_guide, optimizer, loss=Trace_ELBO())
-
+            self.history = []
             #self.elbo_terms = {"obs_data_" + str(i):[] for i in range(len(self.X))}
             #if self.Y is not None:
             #    self.elbo_terms.update({"obs_response_" + str(i):[] for i in range(len(self.Y))})
