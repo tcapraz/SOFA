@@ -21,9 +21,6 @@ sigmoid = nn.Sigmoid()
 softmax = nn.Softmax(dim=1)
 
 
-
-
-
 class SOFA:
     """
         Initializes a SOFA model instance.
@@ -35,15 +32,11 @@ class SOFA:
         num_factors : int
             Number of latent factors.
         Ymdata : MuData, optional
-            Target data. The default is None.
-        target_llh : str, optional
-            Likelihood for target data Ymdata. The default is None.
+            guide data. The default is None.
         design : torch.Tensor, optional
             Design matrix for supervised factors. The default is None.
         device : torch.device, optional
             Device to fit the model ("cuda" or "cpu"). The default is torch.device('cpu').
-        ard : bool, optional
-            Whether to use ARD priors on the loadings (experimental). The default is False. 
         horseshoe : bool, optional
             Whether to use horseshoe priors on the loadings. The default is True.
         update_freq : int, optional
@@ -52,8 +45,8 @@ class SOFA:
             Number of samples to use for each minibatch. The default is 0 (use all samples).
         metadata : pandas.DataFrame, optional
             Dataframe with sample metadata. The default is None.
-        target_scale : list of float, optional
-            Scaling factor for target likelihood. The default is None.
+        guide_scale : list of float, optional
+            Scaling factor for guide likelihood. The default is None.
         verbose : bool, optional
             Whether to print fitting progress. The default is True.
         horseshoe_scale_feature : float, optional
@@ -69,15 +62,12 @@ class SOFA:
                  Xmdata: Union[None, MuData]=None,
                  num_factors: Union[None, int]=None, 
                  Ymdata: Union[None, MuData]=None,  
-                 target_llh: Union[None, List[str]]=None, 
                  design: Union[None, np.ndarray]=None, 
                  device: Optional[Literal["cuda", "cpu"]]="cpu", 
-                 ard: bool=False, 
                  horseshoe: bool=True, 
                  update_freq: int=200, 
                  subsample: int=0, 
                  metadata: Optional[Union[None, DataFrame]]=None, 
-                 target_scale: Optional[Union[None, float]]=None,
                  verbose: bool=True,
                  horseshoe_scale_feature: float=1,
                  horseshoe_scale_factor: float=1,
@@ -102,9 +92,7 @@ class SOFA:
             self.scale = np.ones(len(Xmdata.mod))
             self.num_samples = Xmdata.n_obs
             self.idx = torch.arange(self.num_samples)
-
             self.total_n_features = np.sum([self.Xmdata.mod[i].X.shape[1] for i in self.Xmdata.mod])
-        self.ard = ard
         self.horseshoe = horseshoe
         self.history = []
         self.update_freq = update_freq
@@ -115,16 +103,14 @@ class SOFA:
         self.horseshoe_scale_global = horseshoe_scale_global
         
         if Ymdata is not None:
-            self.Y, self.target_views, self.target_llh, self.k, self.y_dim, self.Ymask  = self._target_handler()
-            self.relative_target_scale = target_scale
-            if target_scale is None:
-                self.target_scale = np.ones(len(Ymdata.mod))*0.1*self.total_n_features
-                self.relative_target_scale = np.ones(len(Ymdata.mod))*0.1
-            else:
-                self.target_scale = np.array(target_scale)*self.total_n_features
+            self.Y, self.guide_views, self.guide_llh, self.k, self.y_dim, self.Ymask, self.relative_guide_scale  = self._guide_handler()
+            # calculate scale for guide likelihood based on number of features in X
+            # relative represents the fraction of the total number of features
+            self.guide_scale = np.array(self.relative_guide_scale)*self.total_n_features
+
         else:
             self.Y = None
-            self.target_llh = None
+            self.guide_llh = None
             self.supervised_factors = 0
                 
         if design is not None:
@@ -149,16 +135,17 @@ class SOFA:
             mask.append(torch.tensor(self.Xmdata.mod[i].obsm["mask"]).to(self.device))
         return X, views, llh, mask
     
-    def _target_handler(self):
-        target_views = []
+    def _guide_handler(self):
+        guide_views = []
         Y = []
-        target_llh = []
+        guide_llh = []
         k = []
         y_dim = []
         mask = []
         self.le = []
+        relative_guide_scale = []
         for ix, i in enumerate(self.Ymdata.mod):
-            target_views.append(i)
+            guide_views.append(i)
             data = self.Ymdata.mod[i].X.copy()
             data[np.isnan(data)] = 0
 
@@ -167,8 +154,9 @@ class SOFA:
                 self.le.append(preprocessing.LabelEncoder())
                 y = torch.tensor(self.le[ix].fit_transform(y)).to(self.device)
             t_llh = self.Ymdata.mod[i].uns["llh"]
-            target_llh.append(t_llh)
-
+            g_scale = self.Ymdata.mod[i].uns["scaling_factor"]
+            guide_llh.append(t_llh)
+            relative_guide_scale.append(g_scale)
             mask.append(torch.tensor(self.Ymdata.mod[i].obsm["mask"]).to(self.device))
             if t_llh == "multinomial":
                 k.append(len(np.unique(y.cpu().numpy())))
@@ -181,13 +169,13 @@ class SOFA:
                 y_dim.append(y.shape[1])
             else:
                 y_dim.append(1)
-        return Y, target_views, target_llh, k, y_dim, mask
+        return Y, guide_views, guide_llh, k, y_dim, mask, relative_guide_scale
     
     def _SOFA_model(self, idx, subsample=32):
         X = self.X
         Y = self.Y
         llh = self.llh
-        target_llh = self.target_llh
+        guide_llh = self.guide_llh
         design = self.design
         
         device = self.device
@@ -195,7 +183,7 @@ class SOFA:
         supervised_factors = self.supervised_factors
         num_views = len(X)
         if Y != None:
-            num_target_views = len(Y)
+            num_guide_views = len(Y)
         
         num_samples = X[0].shape[0]
         num_features = [i.shape[1] for i in X]
@@ -204,7 +192,7 @@ class SOFA:
         for i in range(num_views):
             sigma_data.append(pyro.param(f"sigma_data_{i}", torch.ones(num_features[i], device=device), constraint=pyro.distributions.constraints.positive))
         if Y != None:
-            sigma_response = pyro.param("sigma_response", torch.ones(num_target_views, device=device), constraint=pyro.distributions.constraints.positive)
+            sigma_response = pyro.param("sigma_response", torch.ones(num_guide_views, device=device), constraint=pyro.distributions.constraints.positive)
 
         if self.horseshoe:
             with pyro.plate("views", num_views):
@@ -214,12 +202,6 @@ class SOFA:
         lam_factor=[]
         for i in range(num_views):
             with pyro.plate("factors_{}".format(i), num_factors):
-                if self.ard:
-                    W_scale = pyro.sample("ard_prior_{}".format(i), dist.Gamma(torch.ones(num_features[i], device=device), torch.ones(num_features[i], device=device)).to_event(1))
-                    W_ = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(torch.zeros(num_features[i], device=device), 1 / W_scale).to_event(1))
-                else:
-                    pass
-                    #W_ = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(torch.zeros(num_features[i], device=device), torch.ones(num_features[i], device=device)).to_event(1))
                 if self.horseshoe:
                     lam_feature = pyro.sample("lam_feature_{}".format(i), dist.HalfCauchy(torch.ones(num_features[i], device=device)*self.horseshoe_scale_feature).to_event(1))
                     lam_factor.append(pyro.sample("lam_factor_{}".format(i), dist.HalfCauchy(torch.ones(1, device=device)*self.horseshoe_scale_factor)))
@@ -238,14 +220,14 @@ class SOFA:
         if supervised_factors > 0:
             beta = []
             beta0 = []
-            for i in range(num_target_views):
+            for i in range(num_guide_views):
                 with pyro.plate(f"betas_{i}", int(torch.sum(design[i,:]))):
-                    if target_llh[i] == "multinomial":
+                    if guide_llh[i] == "multinomial":
                         beta_ = pyro.sample(f"beta_{i}", dist.Normal(torch.zeros(self.k[i], device=device), torch.ones(self.k[i], device=device)).to_event(1))
                     else:
                         beta_ = pyro.sample(f"beta_{i}", dist.Normal(torch.zeros(self.y_dim[i], device=device), torch.ones(self.y_dim[i], device=device)).to_event(1))
                         beta0_ = pyro.sample(f"beta0_{i}", dist.Normal(torch.zeros(self.y_dim[i], device=device), torch.ones(self.y_dim[i], device=device)).to_event(1))
-                if target_llh[i] == "multinomial":
+                if guide_llh[i] == "multinomial":
                     beta0_ = pyro.sample(f"beta0_{i}", dist.Normal(torch.zeros(self.k[i], device=device), torch.ones(self.k[i], device=device)).to_event(1))
                 beta.append(beta_)
                 beta0.append(beta0_)
@@ -275,16 +257,16 @@ class SOFA:
                             X_pred.append(X_i)
                             pyro.sample("obs_data_{}".format(i), dist.Normal(X_i, sigma_data[i]).to_event(1), obs=X[i][ind,:])
             if supervised_factors > 0:
-                for i in range(num_target_views):
-                    with pyro.poutine.scale(scale=self.target_scale[i]):
+                for i in range(num_guide_views):
+                    with pyro.poutine.scale(scale=self.guide_scale[i]):
                         with pyro.poutine.mask(mask=self.Ymask[i][ind]):
                             y_pred = Z[:, design[i,:]==1] @ beta[i] + beta0[i]
                             pyro.deterministic(f"Y_{i}", y_pred)
-                            if target_llh[i] == "gaussian":
+                            if guide_llh[i] == "gaussian":
                                 pyro.sample(f"obs_response_{i}", dist.Normal(y_pred, sigma_response[i]).to_event(1), obs=Y[i][ind])
-                            elif target_llh[i] == "bernoulli":
+                            elif guide_llh[i] == "bernoulli":
                                 pyro.sample(f"obs_response_{i}", dist.Bernoulli(sigmoid(y_pred)).to_event(1), obs=Y[i][ind])
-                            elif target_llh[i] == "multinomial":
+                            elif guide_llh[i] == "multinomial":
                                 pyro.sample(f"obs_response_{i}", dist.Categorical(softmax(y_pred)).to_event(1), obs=Y[i][ind])
 
     def _SOFA_guide(self, idx, subsample=32):
@@ -298,7 +280,7 @@ class SOFA:
         num_views = len(X)
 
         if Y != None:
-            num_target_views = len(Y)
+            num_guide_views = len(Y)
         num_samples = X[0].shape[0]
         num_features = [i.shape[1] for i in X]
 
@@ -310,8 +292,8 @@ class SOFA:
         beta0_loc = []
         beta0_scale = []       
         if supervised_factors > 0:
-            for i in range(num_target_views):
-                if self.target_llh[i] == "multinomial":
+            for i in range(num_guide_views):
+                if self.guide_llh[i] == "multinomial":
                     beta_loc.append(pyro.param(f"beta_loc_{i}", torch.zeros(int(torch.sum(design[i,:])), self.k[i], device=device)))
                     beta_scale.append(pyro.param(f"beta_scale_{i}", torch.ones(int(torch.sum(design[i,:])), self.k[i], device=device), constraint=pyro.distributions.constraints.positive))
                     beta0_loc.append(pyro.param(f"beta0_loc_{i}", torch.zeros(self.k[i], device=device)))
@@ -343,19 +325,13 @@ class SOFA:
             lam_factor_loc = []
             lam_feature_scale = []
             lam_factor_scale = []
-        if self.ard:
-            gamma_alpha = []
-            gamma_beta = []
+
      
         W_loc = []
         W_scale = []
 
         for i in range(num_views):
-            if self.ard:
-                gamma_alpha.append(pyro.param("gamma_alpha_{}".format(i), torch.ones((num_factors, num_features[i]), device=device), constraint=dist.constraints.positive))
-                gamma_beta.append(pyro.param("gamma_beta_{}".format(i), torch.ones((num_factors, num_features[i]), device=device), constraint=dist.constraints.positive))
-            else:
-                W_scale.append(pyro.param("W_scale_{}".format(i), torch.ones((num_factors, num_features[i]), device=device), constraint=pyro.distributions.constraints.positive))
+            W_scale.append(pyro.param("W_scale_{}".format(i), torch.ones((num_factors, num_features[i]), device=device), constraint=pyro.distributions.constraints.positive))
 
             W_loc.append(pyro.param("W_loc_{}".format(i), torch.zeros((num_factors, num_features[i]), device=device)))
             if self.horseshoe:
@@ -366,12 +342,7 @@ class SOFA:
                 lam_factor_scale.append(pyro.param("lam_factor_scale_{}".format(i), torch.ones(num_factors, device=device), constraint=dist.constraints.positive))
 
             with pyro.plate("factors_{}".format(i), num_factors):
-                if self.ard:
-                    W_scale = pyro.sample("ard_prior_{}".format(i), dist.Delta(gamma_alpha[i] / gamma_beta[i]).to_event(1))
-                    W = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(W_loc[i], 1 / W_scale).to_event(1))
-                else:
-                    W = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(W_loc[i], W_scale[i]).to_event(1))
-
+                W = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(W_loc[i], W_scale[i]).to_event(1))
                 if self.horseshoe:
                     #lam_feature = pyro.sample("lam_feature_{}".format(i), dist.Delta(lam_feature_loc[i]).to_event(1))
                     #lam_factor = pyro.sample("lam_factor_{}".format(i), dist.Delta(lam_factor_loc[i]))
@@ -386,11 +357,11 @@ class SOFA:
             Z = pyro.sample("Z", dist.Normal(Z_loc[ind,:], Z_scale[ind,:]).to_event(1))
 
             
-    def _simulate(self, sigma_data, num_views, num_features, num_samples,num_factors,llh, num_target_views=None,sigma_response=None, target_llh=None, design=None, return_data = False, k=None, y_dim=None):
+    def _simulate(self, sigma_data, num_views, num_features, num_samples,num_factors,llh, num_guide_views=None,sigma_response=None, guide_llh=None, design=None, return_data = False, k=None, y_dim=None):
 
         
         device = self.device
-        if num_target_views is not None:
+        if num_guide_views is not None:
             supervised_factors = torch.sum(torch.any(design!=0, dim=0))
         else:
             supervised_factors = 0
@@ -405,11 +376,7 @@ class SOFA:
         lam_factor=[]
         for i in range(num_views):
             with pyro.plate("factors_{}".format(i), num_factors):
-                if self.ard:
-                    W_scale = pyro.sample("ard_prior_{}".format(i), dist.Gamma(torch.ones(num_features[i], device=device), torch.ones(num_features[i], device=device)).to_event(1))
-                    W_ = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(torch.zeros(num_features[i], device=device), 1 / W_scale).to_event(1))
-                else:
-                    W_ = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(torch.zeros(num_features[i], device=device), torch.ones(num_features[i], device=device)).to_event(1))
+                W_ = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(torch.zeros(num_features[i], device=device), torch.ones(num_features[i], device=device)).to_event(1))
                 if self.horseshoe:
                     lam_feature_ = pyro.sample("lam_feature_{}".format(i), dist.HalfCauchy(torch.ones(num_features[i], device=device)*self.horseshoe_scale_feature).to_event(1))
                     lam_factor.append(pyro.sample("lam_factor_{}".format(i), dist.HalfCauchy(torch.ones(1, device=device)*self.horseshoe_scale_factor)))
@@ -431,14 +398,14 @@ class SOFA:
         if supervised_factors > 0:
             beta = []
             beta0 = []
-            for i in range(num_target_views):
+            for i in range(num_guide_views):
                 with pyro.plate(f"betas_{i}", int(torch.sum(design[i,:]))):
-                    if target_llh[i] == "multinomial":
+                    if guide_llh[i] == "multinomial":
                         beta_ = pyro.sample(f"beta_{i}", dist.Normal(torch.zeros(self.k[i], device=device), torch.ones(self.k[i], device=device)).to_event(1))
                     else:
                         beta_ = pyro.sample(f"beta_{i}", dist.Normal(torch.zeros(y_dim[i], device=device), torch.ones(y_dim[i], device=device)*10).to_event(1))
                         beta0_ = pyro.sample(f"beta0_{i}", dist.Normal(torch.zeros(y_dim[i], device=device), torch.ones(y_dim[i], device=device)).to_event(1))
-                if target_llh[i] == "multinomial":
+                if guide_llh[i] == "multinomial":
                     beta0_ = pyro.sample(f"beta0_{i}", dist.Normal(torch.zeros(self.k[i], device=device), torch.ones(self.k[i], device=device)).to_event(1))
                 beta.append(beta_)
                 beta0.append(beta0_)
@@ -465,14 +432,14 @@ class SOFA:
                     X_mean.append(X_i_mean)
                     X.append(pyro.sample("data_{}".format(i), dist.Normal(X_mean[i], sigma_data[i]).to_event(1)))
             if supervised_factors > 0:
-                for i in range(num_target_views):
+                for i in range(num_guide_views):
                     Y_mean = Z[:, design[i,:]==1] @ beta[i] + beta0[i]
                     pyro.deterministic(f"Y_{i}", Y_mean)
-                    if target_llh[i] == "gaussian":
+                    if guide_llh[i] == "gaussian":
                         Y.append(pyro.sample(f"obs_response_{i}", dist.Normal(Y_mean, sigma_response[i]).to_event(1)))
-                    elif target_llh[i] == "bernoulli":
+                    elif guide_llh[i] == "bernoulli":
                         Y.append(pyro.sample(f"obs_response_{i}", dist.Bernoulli(sigmoid(Y_mean)).to_event(1)))
-                    elif target_llh[i] == "multinomial":
+                    elif guide_llh[i] == "multinomial":
                         Y.append(pyro.sample(f"obs_response_{i}", dist.Categorical(softmax(Y_mean)).to_event(1)))
         self.X = X
         self.Y = Y
@@ -486,14 +453,14 @@ class SOFA:
         self.total_n_features = np.sum(num_features)
         if supervised_factors > 0:
 
-            self.target_views = np.arange(num_target_views).astype(str)
-            self.target_llh = target_llh
+            self.guide_views = np.arange(num_guide_views).astype(str)
+            self.guide_llh = guide_llh
             self.k = k
 
             self.y_dim = y_dim
-            self.Ymask = [torch.ones(num_samples, dtype=bool).to(self.device) for i in range(num_target_views)]
-            if not hasattr(self, f"target_scale"):
-                self.target_scale = np.ones(num_target_views)*0.1*self.total_n_features
+            self.Ymask = [torch.ones(num_samples, dtype=bool).to(self.device) for i in range(num_guide_views)]
+            if not hasattr(self, f"guide_scale"):
+                self.guide_scale = np.ones(num_guide_views)*0.1*self.total_n_features
         self.num_samples = num_samples
         self.idx = torch.arange(self.num_samples)
         X = [i.cpu().numpy() for i in X]
@@ -600,6 +567,26 @@ class SOFA:
             self.rmse=[np.sqrt(np.sum(np.square(self.X_pred[i]-self.X[i].cpu().numpy()))/(self.X_pred[i].shape[0]*self.X_pred[i].shape[1])) for i in range(len(self.X))]
                 
     def predict(self, site, num_samples=25, num_split=1024, verbose=False):
+        """
+        Sample from approximate posterior distribution
+
+        Parameters
+        ----------
+        site : list
+            Name of parameter site to predict.
+        num_samples : int, optional
+            Number of samples to sample from approximate posterior distribution, by default 25
+        num_split : int, optional
+            Local samples are predicted in chunks of num_split, by default 1024
+        verbose : bool, optional
+            Whether to show progress of prediction, by default False
+
+        Returns
+        -------
+        numpy array 
+            Predicted parameter values
+        """        
+        
         pred = []
         local = np.any([i in site for i in self.local_sites])
         if local:
@@ -632,8 +619,6 @@ class SOFA:
         if not hasattr(self, f"Y_pred") and self.Y is not None:
             self.Y_pred = [self.predict(f"Y_{i}") for i in range(len(self.Y))]
         
-        #X = [AnnData(pd.DataFrame(self.X_pred[i], columns=self.Xmdata.mod[list(self.Xmdata.mod.keys())[i]].var_names)) for i in range(len(self.X)) ]
-        #datadict = {f"X_pred_{i}": X[i] for i in range(len(self.X))}
         datadict = self.Xmdata.mod.copy()
         if self.Y is not None:
             datadict.update(self.Ymdata.mod)
@@ -641,41 +626,28 @@ class SOFA:
         mdata = MuData(datadict)
         mdata.uns["Z"] = self.Z
         
-        mdata.uns["Z"] = self.Z
-
         for i,m in enumerate(self.Xmdata.mod):
-            #W = pd.DataFrame(self.W[i], columns=self.Xmdata.mod[list(self.Xmdata.mod.keys())[i]].var_names)
             mdata.uns[f"W_{m}"] = self.W[i]
             mdata.uns[f"X_{i}"] = self.X_pred[i]
 
         mdata.uns["history"] = self.history
         mdata.uns["seed"] = self.seed
-        #mdata.uns["rmse"] = self.rmse
-        #for i in self.Xmdata.mod:
-            #mdata.uns[f"X_{i}"] = self.Xmdata.mod[i]
-        #if self.Y is not None:
-            #for i in self.Ymdata.mod:
-                #mdata.uns[f"Y_{i}"] = self.Ymdata.mod[i]
-        #mdata.uns["X_pred"] = self.X_pred
         if self.Y is not None:
-            #mdata.uns["Y_pred"] = self.Y_pred
-            mdata.uns["target_mod"] = list(self.Ymdata.mod.keys())
+            mdata.uns["guide_mod"] = list(self.Ymdata.mod.keys())
             mdata.uns["input_design"] = self.design.cpu().numpy()
-            mdata.uns["target_scale"] = self.relative_target_scale
+            mdata.uns["guide_scale"] = self.relative_guide_scale
 
 
         else:
-            mdata.uns["target_mod"] = None
+            mdata.uns["guide_mod"] = None
         mdata.uns["input_num_factors"] = self.num_factors
-        mdata.uns["ard"] = self.ard
         mdata.uns["horseshoe"] = self.horseshoe
-        # cant store metadata as it often has many mixed columns (dtype object)
-        #mdata.uns["metadata"] = self.metadata
+
         return mdata
 
     def _get_param(self, param):
         """
-        get fitted parameters
+        get parameters that were inferred with maximum likelihood
 
         Parameters
         ----------
@@ -684,7 +656,8 @@ class SOFA:
 
         Returns
         -------
-        beta: numpy array
+        numpy array 
+            Parameter values
         """
         params = {i: j for i, j in pyro.get_param_store().items()}
 
