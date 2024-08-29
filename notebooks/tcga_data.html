@@ -558,170 +558,6 @@ model = sofa.SOFA(Xmdata,
 </pre></div></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
-</pre></div>
-</div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>model.fit(n_steps=1000, lr=0.01)
-<br/></pre></div>
-</div>
-</div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-Current Elbo 6.92E+06 | Delta: inf:   5%|▌         | 54/1000 [00:07&lt;02:13,  7.10it/s]
-</pre></div></div>
-</div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area docutils container">
-<div class="highlight"><pre>
-<span class="ansi-red-fg">---------------------------------------------------------------------------</span>
-<span class="ansi-red-fg">KeyboardInterrupt</span>                         Traceback (most recent call last)
-<span class="ansi-green-intense-fg ansi-bold">/home/tuemay/supervised_matrix_factorization/spFA/docs/notebooks/tcga_data.ipynb Cell 10</span> line <span class="ansi-cyan-fg">1
-</span><span class="ansi-green-fg">----&gt; &lt;a href=&#39;vscode-notebook-cell:/home/tuemay/supervised_matrix_factorization/spFA/docs/notebooks/tcga_data.ipynb#X12sZmlsZQ%3D%3D?line=0&#39;&gt;1&lt;/a&gt;</span> model.fit(n_steps=1000, lr=0.01)
-
-File <span class="ansi-green-fg">~/anaconda3/envs/spFA/lib/python3.11/site-packages/spfa/models/spFA.py:352</span>, in <span class="ansi-cyan-fg">spFA.fit</span><span class="ansi-blue-fg">(self, n_steps, lr, refit, predict)</span>
-<span class="ansi-green-intense-fg ansi-bold">    350</span> # do gradient steps
-<span class="ansi-green-intense-fg ansi-bold">    351</span> for step in pbar:
-<span class="ansi-green-fg">--&gt; 352</span>     loss = self.svi.step(idx=self.idx, subsample=self.subsample)
-<span class="ansi-green-intense-fg ansi-bold">    353</span>     # track loss
-<span class="ansi-green-intense-fg ansi-bold">    354</span>     self.history.append(loss)
-
-File <span class="ansi-green-fg">~/anaconda3/envs/spFA/lib/python3.11/site-packages/pyro/infer/svi.py:145</span>, in <span class="ansi-cyan-fg">SVI.step</span><span class="ansi-blue-fg">(self, *args, **kwargs)</span>
-<span class="ansi-green-intense-fg ansi-bold">    143</span> # get loss and compute gradients
-<span class="ansi-green-intense-fg ansi-bold">    144</span> with poutine.trace(param_only=True) as param_capture:
-<span class="ansi-green-fg">--&gt; 145</span>     loss = self.loss_and_grads(self.model, self.guide, *args, **kwargs)
-<span class="ansi-green-intense-fg ansi-bold">    147</span> params = set(
-<span class="ansi-green-intense-fg ansi-bold">    148</span>     site[&#34;value&#34;].unconstrained() for site in param_capture.trace.nodes.values()
-<span class="ansi-green-intense-fg ansi-bold">    149</span> )
-<span class="ansi-green-intense-fg ansi-bold">    151</span> # actually perform gradient steps
-<span class="ansi-green-intense-fg ansi-bold">    152</span> # torch.optim objects gets instantiated for any params that haven&#39;t been seen yet
-
-File <span class="ansi-green-fg">~/anaconda3/envs/spFA/lib/python3.11/site-packages/pyro/infer/trace_elbo.py:140</span>, in <span class="ansi-cyan-fg">Trace_ELBO.loss_and_grads</span><span class="ansi-blue-fg">(self, model, guide, *args, **kwargs)</span>
-<span class="ansi-green-intense-fg ansi-bold">    138</span> loss = 0.0
-<span class="ansi-green-intense-fg ansi-bold">    139</span> # grab a trace from the generator
-<span class="ansi-green-fg">--&gt; 140</span> for model_trace, guide_trace in self._get_traces(model, guide, args, kwargs):
-<span class="ansi-green-intense-fg ansi-bold">    141</span>     loss_particle, surrogate_loss_particle = self._differentiable_loss_particle(
-<span class="ansi-green-intense-fg ansi-bold">    142</span>         model_trace, guide_trace
-<span class="ansi-green-intense-fg ansi-bold">    143</span>     )
-<span class="ansi-green-intense-fg ansi-bold">    144</span>     loss += loss_particle / self.num_particles
-
-File <span class="ansi-green-fg">~/anaconda3/envs/spFA/lib/python3.11/site-packages/pyro/infer/elbo.py:236</span>, in <span class="ansi-cyan-fg">ELBO._get_traces</span><span class="ansi-blue-fg">(self, model, guide, args, kwargs)</span>
-<span class="ansi-green-intense-fg ansi-bold">    234</span> else:
-<span class="ansi-green-intense-fg ansi-bold">    235</span>     for i in range(self.num_particles):
-<span class="ansi-green-fg">--&gt; 236</span>         yield self._get_trace(model, guide, args, kwargs)
-
-File <span class="ansi-green-fg">~/anaconda3/envs/spFA/lib/python3.11/site-packages/pyro/infer/trace_elbo.py:57</span>, in <span class="ansi-cyan-fg">Trace_ELBO._get_trace</span><span class="ansi-blue-fg">(self, model, guide, args, kwargs)</span>
-<span class="ansi-green-intense-fg ansi-bold">     52</span> def _get_trace(self, model, guide, args, kwargs):
-<span class="ansi-green-intense-fg ansi-bold">     53</span>     &#34;&#34;&#34;
-<span class="ansi-green-intense-fg ansi-bold">     54</span>     Returns a single trace from the guide, and the model that is run
-<span class="ansi-green-intense-fg ansi-bold">     55</span>     against it.
-<span class="ansi-green-intense-fg ansi-bold">     56</span>     &#34;&#34;&#34;
-<span class="ansi-green-fg">---&gt; 57</span>     model_trace, guide_trace = get_importance_trace(
-<span class="ansi-green-intense-fg ansi-bold">     58</span>         &#34;flat&#34;, self.max_plate_nesting, model, guide, args, kwargs
-<span class="ansi-green-intense-fg ansi-bold">     59</span>     )
-<span class="ansi-green-intense-fg ansi-bold">     60</span>     if is_validation_enabled():
-<span class="ansi-green-intense-fg ansi-bold">     61</span>         check_if_enumerated(guide_trace)
-
-File <span class="ansi-green-fg">~/anaconda3/envs/spFA/lib/python3.11/site-packages/pyro/infer/enum.py:60</span>, in <span class="ansi-cyan-fg">get_importance_trace</span><span class="ansi-blue-fg">(graph_type, max_plate_nesting, model, guide, args, kwargs, detach)</span>
-<span class="ansi-green-intense-fg ansi-bold">     58</span>     model_trace, guide_trace = unwrapped_guide.get_traces()
-<span class="ansi-green-intense-fg ansi-bold">     59</span> else:
-<span class="ansi-green-fg">---&gt; 60</span>     guide_trace = poutine.trace(guide, graph_type=graph_type).get_trace(
-<span class="ansi-green-intense-fg ansi-bold">     61</span>         *args, **kwargs
-<span class="ansi-green-intense-fg ansi-bold">     62</span>     )
-<span class="ansi-green-intense-fg ansi-bold">     63</span>     if detach:
-<span class="ansi-green-intense-fg ansi-bold">     64</span>         guide_trace.detach_()
-
-File <span class="ansi-green-fg">~/anaconda3/envs/spFA/lib/python3.11/site-packages/pyro/poutine/trace_messenger.py:198</span>, in <span class="ansi-cyan-fg">TraceHandler.get_trace</span><span class="ansi-blue-fg">(self, *args, **kwargs)</span>
-<span class="ansi-green-intense-fg ansi-bold">    190</span> def get_trace(self, *args, **kwargs):
-<span class="ansi-green-intense-fg ansi-bold">    191</span>     &#34;&#34;&#34;
-<span class="ansi-green-intense-fg ansi-bold">    192</span>     :returns: data structure
-<span class="ansi-green-intense-fg ansi-bold">    193</span>     :rtype: pyro.poutine.Trace
-<span class="ansi-green-fg">   (...)</span>
-<span class="ansi-green-intense-fg ansi-bold">    196</span>     Calls this poutine and returns its trace instead of the function&#39;s return value.
-<span class="ansi-green-intense-fg ansi-bold">    197</span>     &#34;&#34;&#34;
-<span class="ansi-green-fg">--&gt; 198</span>     self(*args, **kwargs)
-<span class="ansi-green-intense-fg ansi-bold">    199</span>     return self.msngr.get_trace()
-
-File <span class="ansi-green-fg">~/anaconda3/envs/spFA/lib/python3.11/site-packages/pyro/poutine/trace_messenger.py:174</span>, in <span class="ansi-cyan-fg">TraceHandler.__call__</span><span class="ansi-blue-fg">(self, *args, **kwargs)</span>
-<span class="ansi-green-intense-fg ansi-bold">    170</span> self.msngr.trace.add_node(
-<span class="ansi-green-intense-fg ansi-bold">    171</span>     &#34;_INPUT&#34;, name=&#34;_INPUT&#34;, type=&#34;args&#34;, args=args, kwargs=kwargs
-<span class="ansi-green-intense-fg ansi-bold">    172</span> )
-<span class="ansi-green-intense-fg ansi-bold">    173</span> try:
-<span class="ansi-green-fg">--&gt; 174</span>     ret = self.fn(*args, **kwargs)
-<span class="ansi-green-intense-fg ansi-bold">    175</span> except (ValueError, RuntimeError) as e:
-<span class="ansi-green-intense-fg ansi-bold">    176</span>     exc_type, exc_value, traceback = sys.exc_info()
-
-File <span class="ansi-green-fg">~/anaconda3/envs/spFA/lib/python3.11/site-packages/spfa/models/spFA.py:306</span>, in <span class="ansi-cyan-fg">spFA._spFA_guide</span><span class="ansi-blue-fg">(self, idx, subsample)</span>
-<span class="ansi-green-intense-fg ansi-bold">    304</span> if self.ard:
-<span class="ansi-green-intense-fg ansi-bold">    305</span>     W_scale = pyro.sample(&#34;ard_prior_{}&#34;.format(i), dist.Delta(gamma_alpha[i] / gamma_beta[i]).to_event(1))
-<span class="ansi-green-fg">--&gt; 306</span>     W = pyro.sample(&#34;W_unshrunk_{}&#34;.format(i), dist.Normal(W_loc[i], 1 / W_scale).to_event(1))
-<span class="ansi-green-intense-fg ansi-bold">    307</span> else:
-<span class="ansi-green-intense-fg ansi-bold">    308</span>     W = pyro.sample(&#34;W_unshrunk_{}&#34;.format(i), dist.Normal(W_loc[i], W_scale[i]).to_event(1))
-
-File <span class="ansi-green-fg">~/anaconda3/envs/spFA/lib/python3.11/site-packages/pyro/primitives.py:163</span>, in <span class="ansi-cyan-fg">sample</span><span class="ansi-blue-fg">(name, fn, *args, **kwargs)</span>
-<span class="ansi-green-intense-fg ansi-bold">    146</span> msg = {
-<span class="ansi-green-intense-fg ansi-bold">    147</span>     &#34;type&#34;: &#34;sample&#34;,
-<span class="ansi-green-intense-fg ansi-bold">    148</span>     &#34;name&#34;: name,
-<span class="ansi-green-fg">   (...)</span>
-<span class="ansi-green-intense-fg ansi-bold">    160</span>     &#34;continuation&#34;: None,
-<span class="ansi-green-intense-fg ansi-bold">    161</span> }
-<span class="ansi-green-intense-fg ansi-bold">    162</span> # apply the stack and return its return value
-<span class="ansi-green-fg">--&gt; 163</span> apply_stack(msg)
-<span class="ansi-green-intense-fg ansi-bold">    164</span> return msg[&#34;value&#34;]
-
-File <span class="ansi-green-fg">~/anaconda3/envs/spFA/lib/python3.11/site-packages/pyro/poutine/runtime.py:218</span>, in <span class="ansi-cyan-fg">apply_stack</span><span class="ansi-blue-fg">(initial_msg)</span>
-<span class="ansi-green-intense-fg ansi-bold">    215</span>     if msg[&#34;stop&#34;]:
-<span class="ansi-green-intense-fg ansi-bold">    216</span>         break
-<span class="ansi-green-fg">--&gt; 218</span> default_process_message(msg)
-<span class="ansi-green-intense-fg ansi-bold">    220</span> for frame in stack[-pointer:]:
-<span class="ansi-green-intense-fg ansi-bold">    221</span>     frame._postprocess_message(msg)
-
-File <span class="ansi-green-fg">~/anaconda3/envs/spFA/lib/python3.11/site-packages/pyro/poutine/runtime.py:179</span>, in <span class="ansi-cyan-fg">default_process_message</span><span class="ansi-blue-fg">(msg)</span>
-<span class="ansi-green-intense-fg ansi-bold">    176</span>     msg[&#34;done&#34;] = True
-<span class="ansi-green-intense-fg ansi-bold">    177</span>     return msg
-<span class="ansi-green-fg">--&gt; 179</span> msg[&#34;value&#34;] = msg[&#34;fn&#34;](*msg[&#34;args&#34;], **msg[&#34;kwargs&#34;])
-<span class="ansi-green-intense-fg ansi-bold">    181</span> # after fn has been called, update msg to prevent it from being called again.
-<span class="ansi-green-intense-fg ansi-bold">    182</span> msg[&#34;done&#34;] = True
-
-File <span class="ansi-green-fg">~/anaconda3/envs/spFA/lib/python3.11/site-packages/pyro/distributions/torch_distribution.py:48</span>, in <span class="ansi-cyan-fg">TorchDistributionMixin.__call__</span><span class="ansi-blue-fg">(self, sample_shape)</span>
-<span class="ansi-green-intense-fg ansi-bold">     30</span> def __call__(self, sample_shape=torch.Size()):
-<span class="ansi-green-intense-fg ansi-bold">     31</span>     &#34;&#34;&#34;
-<span class="ansi-green-intense-fg ansi-bold">     32</span>     Samples a random value.
-<span class="ansi-green-intense-fg ansi-bold">     33</span>
-<span class="ansi-green-fg">   (...)</span>
-<span class="ansi-green-intense-fg ansi-bold">     45</span>     :rtype: torch.Tensor
-<span class="ansi-green-intense-fg ansi-bold">     46</span>     &#34;&#34;&#34;
-<span class="ansi-green-intense-fg ansi-bold">     47</span>     return (
-<span class="ansi-green-fg">---&gt; 48</span>         self.rsample(sample_shape)
-<span class="ansi-green-intense-fg ansi-bold">     49</span>         if self.has_rsample
-<span class="ansi-green-intense-fg ansi-bold">     50</span>         else self.sample(sample_shape)
-<span class="ansi-green-intense-fg ansi-bold">     51</span>     )
-
-File <span class="ansi-green-fg">~/anaconda3/envs/spFA/lib/python3.11/site-packages/torch/distributions/independent.py:96</span>, in <span class="ansi-cyan-fg">Independent.rsample</span><span class="ansi-blue-fg">(self, sample_shape)</span>
-<span class="ansi-green-intense-fg ansi-bold">     95</span> def rsample(self, sample_shape=torch.Size()):
-<span class="ansi-green-fg">---&gt; 96</span>     return self.base_dist.rsample(sample_shape)
-
-File <span class="ansi-green-fg">~/anaconda3/envs/spFA/lib/python3.11/site-packages/torch/distributions/normal.py:74</span>, in <span class="ansi-cyan-fg">Normal.rsample</span><span class="ansi-blue-fg">(self, sample_shape)</span>
-<span class="ansi-green-intense-fg ansi-bold">     72</span> def rsample(self, sample_shape=torch.Size()):
-<span class="ansi-green-intense-fg ansi-bold">     73</span>     shape = self._extended_shape(sample_shape)
-<span class="ansi-green-fg">---&gt; 74</span>     eps = _standard_normal(shape, dtype=self.loc.dtype, device=self.loc.device)
-<span class="ansi-green-intense-fg ansi-bold">     75</span>     return self.loc + eps * self.scale
-
-File <span class="ansi-green-fg">~/anaconda3/envs/spFA/lib/python3.11/site-packages/torch/distributions/utils.py:48</span>, in <span class="ansi-cyan-fg">_standard_normal</span><span class="ansi-blue-fg">(shape, dtype, device)</span>
-<span class="ansi-green-intense-fg ansi-bold">     44</span> if torch._C._get_tracing_state():
-<span class="ansi-green-intense-fg ansi-bold">     45</span>     # [JIT WORKAROUND] lack of support for .normal_()
-<span class="ansi-green-intense-fg ansi-bold">     46</span>     return torch.normal(torch.zeros(shape, dtype=dtype, device=device),
-<span class="ansi-green-intense-fg ansi-bold">     47</span>                         torch.ones(shape, dtype=dtype, device=device))
-<span class="ansi-green-fg">---&gt; 48</span> return torch.empty(shape, dtype=dtype, device=device).normal_()
-
-<span class="ansi-red-fg">KeyboardInterrupt</span>:
-</pre></div></div>
-</div>
-<div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
@@ -735,7 +571,7 @@ plt.close()
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_tcga_data_10_0.png" src="../_images/notebooks_tcga_data_10_0.png" />
+<img alt="../_images/notebooks_tcga_data_9_0.png" src="../_images/notebooks_tcga_data_9_0.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
@@ -762,28 +598,28 @@ plt.close()
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_tcga_data_11_0.png" src="../_images/notebooks_tcga_data_11_0.png" />
+<img alt="../_images/notebooks_tcga_data_10_0.png" src="../_images/notebooks_tcga_data_10_0.png" />
 </div>
 </div>
 <div class="nboutput docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_tcga_data_11_1.png" src="../_images/notebooks_tcga_data_11_1.png" />
+<img alt="../_images/notebooks_tcga_data_10_1.png" src="../_images/notebooks_tcga_data_10_1.png" />
 </div>
 </div>
 <div class="nboutput docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_tcga_data_11_2.png" src="../_images/notebooks_tcga_data_11_2.png" />
+<img alt="../_images/notebooks_tcga_data_10_2.png" src="../_images/notebooks_tcga_data_10_2.png" />
 </div>
 </div>
 <div class="nboutput nblast docutils container">
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_tcga_data_11_3.png" src="../_images/notebooks_tcga_data_11_3.png" />
+<img alt="../_images/notebooks_tcga_data_10_3.png" src="../_images/notebooks_tcga_data_10_3.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
@@ -1029,7 +865,7 @@ matplotlib.rcParams.update(matplotlib.rcParamsDefault)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_tcga_data_12_1.png" src="../_images/notebooks_tcga_data_12_1.png" />
+<img alt="../_images/notebooks_tcga_data_11_1.png" src="../_images/notebooks_tcga_data_11_1.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
@@ -1054,7 +890,7 @@ plt.show()
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_tcga_data_13_1.png" src="../_images/notebooks_tcga_data_13_1.png" />
+<img alt="../_images/notebooks_tcga_data_12_1.png" src="../_images/notebooks_tcga_data_12_1.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
@@ -1080,7 +916,7 @@ plt.show()
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_tcga_data_14_1.png" src="../_images/notebooks_tcga_data_14_1.png" />
+<img alt="../_images/notebooks_tcga_data_13_1.png" src="../_images/notebooks_tcga_data_13_1.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
@@ -1096,7 +932,7 @@ plt.show()
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_tcga_data_15_0.png" src="../_images/notebooks_tcga_data_15_0.png" />
+<img alt="../_images/notebooks_tcga_data_14_0.png" src="../_images/notebooks_tcga_data_14_0.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
@@ -1112,7 +948,7 @@ plt.show()
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_tcga_data_16_0.png" src="../_images/notebooks_tcga_data_16_0.png" />
+<img alt="../_images/notebooks_tcga_data_15_0.png" src="../_images/notebooks_tcga_data_15_0.png" />
 </div>
 </div>
 </section>
