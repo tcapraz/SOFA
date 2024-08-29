@@ -345,7 +345,6 @@
     "            num_factors=7,\n",
     "            design = design,\n",
     "            device=torch.device('cpu'),\n",
-    "            ard = False,\n",
     "            horseshoe = True,\n",
     "            metadata= metadata,\n",
     "            subsample=0,\n",
@@ -364,7 +363,6 @@
     "* Ymdata: contains the target covariates as MuData object\n",
     "* num_factors: number of factors to fit\n",
     "* device: device to use for fitting. We highly recommend to run `SOFA` with a cuda device (torch.device(\"cuda\"))\n",
-    "* ard: whether to use sparse automatic relevance determination priors on weights\n",
     "* horseshoe: whether to use sparse horseshoe priors on weights\n",
     "* subsample: whether to subsample the data during fitting. Recommended for very large data sets like single cell data sets.\n",
     "* target_scale: crucial hyperparameter to scale how strong factors are guided by target covariates. Too high scaling parameters can lead to overfitting (Factors don't explain variance of Xmdata, but perfectly predict Ymdata). Too low values can lead to the model ignoring the covariate guidance.\n"

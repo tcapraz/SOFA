@@ -609,7 +609,6 @@ tensor([[1., 0., 0., 0., 0., 0., 0.],
             num_factors=7,
             design = design,
             device=torch.device(&#39;cpu&#39;),
-            ard = False,
             horseshoe = True,
             metadata= metadata,
             subsample=0,
@@ -623,7 +622,6 @@ tensor([[1., 0., 0., 0., 0., 0., 0.],
 <li><p>Ymdata: contains the target covariates as MuData object</p></li>
 <li><p>num_factors: number of factors to fit</p></li>
 <li><p>device: device to use for fitting. We highly recommend to run <code class="docutils literal notranslate"><span class="pre">SOFA</span></code> with a cuda device (torch.device(“cuda”))</p></li>
-<li><p>ard: whether to use sparse automatic relevance determination priors on weights</p></li>
 <li><p>horseshoe: whether to use sparse horseshoe priors on weights</p></li>
 <li><p>subsample: whether to subsample the data during fitting. Recommended for very large data sets like single cell data sets.</p></li>
 <li><p>target_scale: crucial hyperparameter to scale how strong factors are guided by target covariates. Too high scaling parameters can lead to overfitting (Factors don’t explain variance of Xmdata, but perfectly predict Ymdata). Too low values can lead to the model ignoring the covariate guidance.</p></li>
