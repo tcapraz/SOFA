@@ -1,4 +1,4 @@
-Welcome to spfa's documentation!
+Welcome to SOFA's documentation!
 ===================================
 
 
@@ -8,7 +8,7 @@ Welcome to spfa's documentation!
    :maxdepth: 2
    :caption: API:
 
-   spfa
+   sofa
    plots
    utils
 

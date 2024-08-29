@@ -3,6 +3,6 @@ plots
 
 
 
-.. automodule:: spfa.plots.plots
+.. automodule:: sofa.plots.plots
    :members:
 
