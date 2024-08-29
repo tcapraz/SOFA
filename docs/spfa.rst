@@ -1,8 +1,8 @@
-spFA
+SOFA
 =================
 
 
 
-.. automodule:: spfa.models.spFA
+.. automodule:: sofa.models.SOFA
    :members:
 

@@ -3,6 +3,6 @@ tools
 
 
 
-.. automodule:: spfa.utils.utils
+.. automodule:: sofa.utils.utils
    :members:
 

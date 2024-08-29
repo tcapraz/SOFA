@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "SOFA"
+name = "biosofa"
 version = "0.2.0"
 description = "Probabilistic factor analysis model with covariate guided factors"
 authors = ["capraz <tuemayc@hotmail.com>"]
