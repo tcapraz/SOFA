@@ -154,11 +154,19 @@ def get_rmse(model):
     return rmse
 
 def get_rmse_target(model):
-    rmse = 0
-    for i,j in zip(model.Y, model.Y_pred):
-        i = i.cpu().numpy()
-        rmse += np.sqrt(np.sum(np.square(i-j))/(i.shape[0]*i.shape[1]))
+    rmse = []
+    for ix, (i,j) in enumerate(zip(model.Y, model.Y_pred)):
+        if model.target_llh[ix] == "gaussian":
+            i = i.cpu().numpy()
+            rmse.append(np.sqrt(np.sum(np.square(i-j))/(i.shape[0]*i.shape[1])))
+        elif model.target_llh[ix] == "bernoulli":
+            i = i.cpu().numpy()
+            rmse.append(log_loss(i,sigmoid(j)))
+        elif model.target_llh[ix] == "multinomial":
+            i = i.cpu().numpy()
+            rmse.append(log_loss(i,softmax(j)))
     return rmse
+
 
 def save_model(model, file_prefix):
     model_mdata = model.save_as_mudata()
