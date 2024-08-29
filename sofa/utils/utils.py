@@ -13,7 +13,7 @@ from muon import MuData
 from sklearn.preprocessing import LabelEncoder
 from anndata import AnnData
 from itertools import product
-from ..models.spFA import spFA
+from ..models.SOFA import SOFA
 
 import scipy.stats as stats
 import pandas as pd
@@ -197,7 +197,7 @@ def load_model(file_prefix):
     horseshoe = mdata.uns["horseshoe"]
 
     seed = mdata.uns["seed"]
-    model = spFA(Xmdata, 
+    model = SOFA(Xmdata, 
                   num_factors=num_factors, 
                   Ymdata = Ymdata,
                   design = torch.tensor(design),

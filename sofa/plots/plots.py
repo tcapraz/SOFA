@@ -7,7 +7,7 @@ import pandas as pd
 import matplotlib
 import scipy.stats as stats
 from ..utils.utils import calc_var_explained, calc_var_explained_view, get_gsea_enrichment
-from ..models.spFA import spFA
+from ..models.SOFA import SOFA
 import pandas as pd
 import numpy as np
 from matplotlib.axes import Axes 
@@ -21,17 +21,17 @@ from matplotlib.colorbar import ColorbarBase
 from matplotlib.colors import Normalize
 
 def plot_weights(
-        model: spFA, 
+        model: SOFA, 
         view: str, 
         factor: int=0
         ) -> Axes:
     """
-    Plot the weights of a specific factor for a given view in the spFA model.
+    Plot the weights of a specific factor for a given view in the SOFA model.
 
     Parameters
     ----------
-    model : spFA
-        The spFA model to plot the weights for.
+    model : SOFA
+        The SOFA model to plot the weights for.
     view : str
         The name of the view to plot the weights for.
     factor : int, optional
@@ -59,7 +59,7 @@ def plot_weights(
 
 
 def plot_top_weights(
-        model: spFA,
+        model: SOFA,
         view: int,
         factor: int,
         top_n:  int=10,
@@ -71,7 +71,7 @@ def plot_top_weights(
 
     Parameters
     ----------
-    model : spFA
+    model : SOFA
         The trained model object.
     view : int
         The index of the view to plot.
@@ -138,7 +138,7 @@ def plot_top_weights(
     return ax
 
 def plot_variance_explained(
-        model: spFA,
+        model: SOFA,
         horizontal: bool=False,
         ax: Union[None,Axes]=None,
         cax: Union[None,Axes]=None
@@ -149,8 +149,8 @@ def plot_variance_explained(
 
     Parameters
     ----------
-    model : spFA
-        The trained spFA model.
+    model : SOFA
+        The trained SOFA model.
 
     Returns
     -------
@@ -202,7 +202,7 @@ def plot_variance_explained(
         plt.colorbar(plot)
     return ax, vexp
 
-def plot_variance_explained_group(model: spFA,
+def plot_variance_explained_group(model: SOFA,
                                   ax: Union[None,Axes]=None
                                  ) -> Axes:
     """
@@ -210,8 +210,8 @@ def plot_variance_explained_group(model: spFA,
 
     Parameters
     ----------
-    model : spFA
-        The trained spFA model.
+    model : SOFA
+        The trained SOFA model.
 
     Returns
     -------
@@ -274,14 +274,14 @@ def plot_variance_explained_group(model: spFA,
     return ax, vexp
 
 
-def plot_variance_explained_factor(model: spFA) -> Axes:
+def plot_variance_explained_factor(model: SOFA) -> Axes:
 
     """Plots the variance explained by each factor.
 
     Parameters
     ----------
-    model : spFA
-        The trained spFA model.
+    model : SOFA
+        The trained SOFA model.
 
     Returns
     -------
@@ -311,13 +311,13 @@ def plot_variance_explained_factor(model: spFA) -> Axes:
     ax.set_xticklabels(["Factor"+ str(i+1) for  i in range(len(vexp))],rotation=90)
     return ax, vexp
 
-def plot_variance_explained_view(model: spFA) -> Axes:
+def plot_variance_explained_view(model: SOFA) -> Axes:
     """Plots the variance explained of each view.
 
     Parameters
     ----------
-    model : spFA
-        The trained spFA model.
+    model : SOFA
+        The trained SOFA model.
 
     Returns
     -------
@@ -342,7 +342,7 @@ def plot_variance_explained_view(model: spFA) -> Axes:
     return ax
 
 def plot_factor_covariate_cor(
-        model: spFA,
+        model: SOFA,
         metavar: List[int],
         horizontal: bool=False,
         ax: Union[None,Axes]=None,
@@ -354,8 +354,8 @@ def plot_factor_covariate_cor(
 
     Parameters
     ----------
-    model : spFA
-        The trained spFA model.
+    model : SOFA
+        The trained SOFA model.
     metavar : list of str
         The list of covariate names to plot
 
@@ -413,7 +413,7 @@ def plot_factor_covariate_cor(
     return ax
 
 def plot_factor_covariate_cor_dot(
-        model: spFA,
+        model: SOFA,
         metavar: List[int]
         ) -> Axes:
     """
@@ -421,8 +421,8 @@ def plot_factor_covariate_cor_dot(
 
     Parameters
     ----------
-    model : spFA
-        The trained spFA model.
+    model : SOFA
+        The trained SOFA model.
     metavar : list of str
         The list of covariate names to plot
 
@@ -492,7 +492,7 @@ def plot_factor_covariate_cor_dot(
 
 
 def plot_fit(
-        model: spFA,
+        model: SOFA,
         view: int
         ) -> Axes:
     """
@@ -500,8 +500,8 @@ def plot_fit(
 
     Parameters
     ----------
-    model : spFA
-        The trained spFA model.
+    model : SOFA
+        The trained SOFA model.
     view : int
         The index of the view to plot.
 

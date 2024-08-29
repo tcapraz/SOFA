@@ -1,10 +1,10 @@
 [tool.poetry]
-name = "spFA"
-version = "0.6.0"
+name = "SOFA"
+version = "0.2.0"
 description = "Probabilistic factor analysis model with covariate guided factors"
 authors = ["capraz <tuemayc@hotmail.com>"]
 readme = "README.md"
-packages = [{include = "spfa"}]
+packages = [{include = "sofa"}]
 license = "MIT"
 
 

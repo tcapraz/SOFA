@@ -24,9 +24,9 @@ softmax = nn.Softmax(dim=1)
 
 
 
-class spFA:
+class SOFA:
     """
-        Initializes a spFA model instance.
+        Initializes a SOFA model instance.
 
         Parameters
         ----------
@@ -183,7 +183,7 @@ class spFA:
                 y_dim.append(1)
         return Y, target_views, target_llh, k, y_dim, mask
     
-    def _spFA_model(self, idx, subsample=32):
+    def _SOFA_model(self, idx, subsample=32):
         X = self.X
         Y = self.Y
         llh = self.llh
@@ -287,7 +287,7 @@ class spFA:
                             elif target_llh[i] == "multinomial":
                                 pyro.sample(f"obs_response_{i}", dist.Categorical(softmax(y_pred)).to_event(1), obs=Y[i][ind])
 
-    def _spFA_guide(self, idx, subsample=32):
+    def _SOFA_guide(self, idx, subsample=32):
         X = self.X
         Y = self.Y
         llh = self.llh
@@ -515,7 +515,7 @@ class spFA:
     
     def fit(self, n_steps=3000, lr=0.005, refit=False, predict=True):
         """
-        method to fit the spFA model
+        method to fit the SOFA model
 
         Parameters
         ----------
@@ -525,7 +525,7 @@ class spFA:
             learning rate for adam optimizer. The default is 0.005.
         refit : bool, optional
             whether to refit the model. the default behaviour is that
-            the model will not be newly intialized if you call fit_spFA
+            the model will not be newly intialized if you call fit_SOFA
             twice with refit=False.
             The default is False.
 
@@ -539,7 +539,7 @@ class spFA:
 
         if not self.isfit or refit:
             pyro.clear_param_store()
-            self.svi = SVI(self._spFA_model, self._spFA_guide, optimizer, loss=Trace_ELBO())
+            self.svi = SVI(self._SOFA_model, self._SOFA_guide, optimizer, loss=Trace_ELBO())
             self.history = []
             #self.elbo_terms = {"obs_data_" + str(i):[] for i in range(len(self.X))}
             #if self.Y is not None:
@@ -567,8 +567,8 @@ class spFA:
                     last_elbo = loss
                 
                 
-                guide_trace = pyro.poutine.trace(self._spFA_guide).get_trace(idx = self.idx, subsample=0)
-                model_trace = pyro.poutine.trace(pyro.poutine.replay(self._spFA_model, guide_trace)).get_trace(idx = self.idx, subsample=0)
+                guide_trace = pyro.poutine.trace(self._SOFA_guide).get_trace(idx = self.idx, subsample=0)
+                model_trace = pyro.poutine.trace(pyro.poutine.replay(self._SOFA_model, guide_trace)).get_trace(idx = self.idx, subsample=0)
                 #for i in self.elbo_terms:
                 #    self.elbo_terms[i].append(model_trace.nodes[i]["fn"].log_prob(model_trace.nodes[i]["value"]).sum().detach().cpu().numpy())
         else:
@@ -616,7 +616,7 @@ class spFA:
                 pbar_pred.set_description(f"Predicting {site} for obs {torch.min(split_obs[i])}-{torch.max(split_obs[i])}.")
         else:
             for i in range(len(split_obs)):
-                predictive = Predictive(self._spFA_model, guide=self._spFA_guide, num_samples=num_samples, return_sites=[site])
+                predictive = Predictive(self._SOFA_model, guide=self._SOFA_guide, num_samples=num_samples, return_sites=[site])
                 samples = predictive(idx=split_obs[i], subsample=0)
                 pred.append(np.mean(samples[site].cpu().numpy(), axis=0))
                 torch.cuda.empty_cache()
