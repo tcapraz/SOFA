@@ -102,8 +102,183 @@
     text-align: unset;
 }
 </style>
-<section id="plots">
-<h1>plots<a class="headerlink" href="#plots" title="Permalink to this headline"></a></h1>
+<section id="module-sofa.plots.plots">
+<span id="plots"></span><h1>plots<a class="headerlink" href="#module-sofa.plots.plots" title="Permalink to this headline"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="sofa.plots.plots.plot_enrichment">
+<span class="sig-prename descclassname"><span class="pre">sofa.plots.plots.</span></span><span class="sig-name descname"><span class="pre">plot_enrichment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gene_list</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">background</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">db</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">top_n</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span> </span><span class="pre">matplotlib.axes._axes.Axes</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">matplotlib.axes._axes.Axes</span></span></span><a class="headerlink" href="#sofa.plots.plots.plot_enrichment" title="Permalink to this definition"></a></dt>
+<dd><p>Plot bar plot of adjusted p-values for gene set overrepresentation analysis based on a provided gene_list.
+The gene set overrepresentation analysis uses the enrichr api and calculates whether
+gene sets from chosen databases are significantly overrepresented vs a background gene set.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>gene_list</strong> (<em>list</em>) – Gene list to perform gene set overrepresentation analysis on.</p></li>
+<li><p><strong>background</strong> (<em>list</em>) – Background gene list, a good choice would be all the genes that are considered in the analysis
+(i.e. all the genes in X).</p></li>
+<li><p><strong>db</strong> (<em>list</em>) – List of strings of databases to perform gene set overrepresentation analysis on. A list of possible
+databases can be found here <a class="reference external" href="https://maayanlab.cloud/Enrichr/#libraries">https://maayanlab.cloud/Enrichr/#libraries</a>.</p></li>
+<li><p><strong>top_n</strong> (<em>list</em>) – List of integers of the number of top gene sets to plot for each database.</p></li>
+<li><p><strong>ax</strong> (<em>Union</em><em>[</em><em>None</em><em>,</em><em>Axes</em><em>]</em><em>, </em><em>optional</em>) – Axes to plot on, if None, a new figure is created, by default None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Bar plot of adjusted p-values for gene set overrepresentation analysis.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>matplotlib Axes object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sofa.plots.plots.plot_factor_covariate_cor">
+<span class="sig-prename descclassname"><span class="pre">sofa.plots.plots.</span></span><span class="sig-name descname"><span class="pre">plot_factor_covariate_cor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="sofa.html#sofa.models.SOFA.SOFA" title="sofa.models.SOFA.SOFA"><span class="pre">sofa.models.SOFA.SOFA</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">metavar</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span> </span><span class="pre">matplotlib.axes._axes.Axes</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">matplotlib.axes._axes.Axes</span></span></span><a class="headerlink" href="#sofa.plots.plots.plot_factor_covariate_cor" title="Permalink to this definition"></a></dt>
+<dd><p>Plot the correlation between the factors and covariates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<a class="reference internal" href="sofa.html#sofa.models.SOFA.SOFA" title="sofa.models.SOFA.SOFA"><em>SOFA</em></a>) – The trained SOFA model.</p></li>
+<li><p><strong>metavar</strong> (<em>list of str</em>) – The list of covariate names to plot</p></li>
+<li><p><strong>ax</strong> (<em>matplotlib Axes object</em><em>, </em><em>optional</em>) – The axes to plot on. If None, a new figure is created.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Heatmap with the correlation between the factors and covariates.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>matplotlib Axes object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sofa.plots.plots.plot_fit">
+<span class="sig-prename descclassname"><span class="pre">sofa.plots.plots.</span></span><span class="sig-name descname"><span class="pre">plot_fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="sofa.html#sofa.models.SOFA.SOFA" title="sofa.models.SOFA.SOFA"><span class="pre">sofa.models.SOFA.SOFA</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">view</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">matplotlib.axes._axes.Axes</span></span></span><a class="headerlink" href="#sofa.plots.plots.plot_fit" title="Permalink to this definition"></a></dt>
+<dd><p>Plot the scatter plot with predicted X vs input X, to assess the model fit.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<a class="reference internal" href="sofa.html#sofa.models.SOFA.SOFA" title="sofa.models.SOFA.SOFA"><em>SOFA</em></a>) – The trained SOFA model.</p></li>
+<li><p><strong>view</strong> (<em>int</em>) – The index of the view to plot.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Scatter plot with predicted X vs input X.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>matplotlib Axes object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sofa.plots.plots.plot_loadings">
+<span class="sig-prename descclassname"><span class="pre">sofa.plots.plots.</span></span><span class="sig-name descname"><span class="pre">plot_loadings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="sofa.html#sofa.models.SOFA.SOFA" title="sofa.models.SOFA.SOFA"><span class="pre">sofa.models.SOFA.SOFA</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">view</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factor</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">matplotlib.axes._axes.Axes</span></span></span><a class="headerlink" href="#sofa.plots.plots.plot_loadings" title="Permalink to this definition"></a></dt>
+<dd><p>Plot the loadings of a specific factor for a given view in the SOFA model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<a class="reference internal" href="sofa.html#sofa.models.SOFA.SOFA" title="sofa.models.SOFA.SOFA"><em>SOFA</em></a>) – The SOFA model to plot the loadings for.</p></li>
+<li><p><strong>view</strong> (<em>str</em>) – The name of the view to plot the loadings for.</p></li>
+<li><p><strong>factor</strong> (<em>int</em><em>, </em><em>optional</em>) – The index of the factor to plot the loadings for. Default is 0.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Plot with loadings for the specified factor and view.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>matplotlib Axes object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sofa.plots.plots.plot_top_loadings">
+<span class="sig-prename descclassname"><span class="pre">sofa.plots.plots.</span></span><span class="sig-name descname"><span class="pre">plot_top_loadings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="sofa.html#sofa.models.SOFA.SOFA" title="sofa.models.SOFA.SOFA"><span class="pre">sofa.models.SOFA.SOFA</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">view</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factor</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">top_n</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">int</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sign</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">highlight</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span> </span><span class="pre">matplotlib.axes._axes.Axes</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">matplotlib.axes._axes.Axes</span></span></span><a class="headerlink" href="#sofa.plots.plots.plot_top_loadings" title="Permalink to this definition"></a></dt>
+<dd><p>Plot the top loadings of a factor in a given view.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<a class="reference internal" href="sofa.html#sofa.models.SOFA.SOFA" title="sofa.models.SOFA.SOFA"><em>SOFA</em></a>) – The trained model object.</p></li>
+<li><p><strong>view</strong> (<em>int</em>) – The index of the view to plot.</p></li>
+<li><p><strong>factor</strong> (<em>str</em>) – The name of the factor to plot.</p></li>
+<li><p><strong>top_n</strong> (<em>int</em><em>, </em><em>optional</em>) – The number of top loadings to plot, by default 10.</p></li>
+<li><p><strong>sign</strong> (<em>str</em><em>, </em><em>optional</em>) – The sign of the loadings to plot. If None, plot the top absolute loadings.
+If “+” or “-”, plot the top positive or negative loadings, respectively.</p></li>
+<li><p><strong>highlight</strong> (<em>list</em><em>, </em><em>optional</em>) – A list of feature names to highlight in red, by default None.</p></li>
+<li><p><strong>ax</strong> (<em>matplotlib Axes object</em><em>, </em><em>optional</em>) – The axes to plot on. If None, a new figure is created.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Plot with top loadings.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>matplotlib  Axes object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sofa.plots.plots.plot_variance_explained">
+<span class="sig-prename descclassname"><span class="pre">sofa.plots.plots.</span></span><span class="sig-name descname"><span class="pre">plot_variance_explained</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="sofa.html#sofa.models.SOFA.SOFA" title="sofa.models.SOFA.SOFA"><span class="pre">sofa.models.SOFA.SOFA</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span> </span><span class="pre">matplotlib.axes._axes.Axes</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">matplotlib.axes._axes.Axes</span></span></span><a class="headerlink" href="#sofa.plots.plots.plot_variance_explained" title="Permalink to this definition"></a></dt>
+<dd><p>Plot the variance explained by each factor for each view.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<a class="reference internal" href="sofa.html#sofa.models.SOFA.SOFA" title="sofa.models.SOFA.SOFA"><em>SOFA</em></a>) – The trained SOFA model.</p></li>
+<li><p><strong>ax</strong> (<em>matplotlib Axes object</em><em>, </em><em>optional</em>) – The axes to plot on. If None, a new figure is created.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Plot with variance explained by each factor for each view.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>matplotlib Axes object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sofa.plots.plots.plot_variance_explained_factor">
+<span class="sig-prename descclassname"><span class="pre">sofa.plots.plots.</span></span><span class="sig-name descname"><span class="pre">plot_variance_explained_factor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="sofa.html#sofa.models.SOFA.SOFA" title="sofa.models.SOFA.SOFA"><span class="pre">sofa.models.SOFA.SOFA</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span> </span><span class="pre">matplotlib.axes._axes.Axes</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">matplotlib.axes._axes.Axes</span></span></span><a class="headerlink" href="#sofa.plots.plots.plot_variance_explained_factor" title="Permalink to this definition"></a></dt>
+<dd><p>Plots the variance explained by each factor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<a class="reference internal" href="sofa.html#sofa.models.SOFA.SOFA" title="sofa.models.SOFA.SOFA"><em>SOFA</em></a>) – The trained SOFA model.</p></li>
+<li><p><strong>ax</strong> (<em>matplotlib Axes object</em><em>, </em><em>optional</em>) – The axes to plot on. If None, a new figure is created.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Plot with variance explained by each factor.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>matplotlib Axes object</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sofa.plots.plots.plot_variance_explained_view">
+<span class="sig-prename descclassname"><span class="pre">sofa.plots.plots.</span></span><span class="sig-name descname"><span class="pre">plot_variance_explained_view</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="sofa.html#sofa.models.SOFA.SOFA" title="sofa.models.SOFA.SOFA"><span class="pre">sofa.models.SOFA.SOFA</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">None</span><span class="p"><span class="pre">,</span> </span><span class="pre">matplotlib.axes._axes.Axes</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">matplotlib.axes._axes.Axes</span></span></span><a class="headerlink" href="#sofa.plots.plots.plot_variance_explained_view" title="Permalink to this definition"></a></dt>
+<dd><p>Plots the variance explained of each view.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<a class="reference internal" href="sofa.html#sofa.models.SOFA.SOFA" title="sofa.models.SOFA.SOFA"><em>SOFA</em></a>) – The trained SOFA model.</p></li>
+<li><p><strong>ax</strong> (<em>matplotlib Axes object</em><em>, </em><em>optional</em>) – The axes to plot on. If None, a new figure is created.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Plot with variance explained of each view.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Axes</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 
 
