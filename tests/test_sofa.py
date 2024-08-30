@@ -37,8 +37,8 @@ def test_SOFA_initialization():
     assert model.horseshoe_scale_global == horseshoe_scale_global
     assert model.seed == seed
 
-def test_SOFA_fit():
-    Xmdata = None
+def test_SOFA_fit(sample_data):
+    Xmdata = MuData({"m1": sample_data, "m2": sample_data})
     num_factors = 10
     Ymdata = None
     design = None
@@ -59,8 +59,8 @@ def test_SOFA_fit():
 
     assert len(model.history) == 100
 
-def test_SOFA_predict():
-    Xmdata = None
+def test_SOFA_predict(sample_data):
+    Xmdata = MuData({"m1": sample_data, "m2": sample_data})
     num_factors = 10
     Ymdata = None
     design = None
@@ -80,11 +80,13 @@ def test_SOFA_predict():
     model.fit(n_steps=100, lr=0.01)
 
     Z_pred = model.predict("Z")
+    W_pred = model.predict("W")
 
     assert Z_pred.shape == (model.num_samples, model.num_factors)
+    assert W_pred[0].shape == (model.num_factors, sample_data.shape[1])
 
-def test_SOFA_save_as_mudata():
-    Xmdata = None
+def test_SOFA_save_as_mudata(sample_data):
+    Xmdata = MuData({"m1": sample_data, "m2": sample_data})
     num_factors = 10
     Ymdata = None
     design = None

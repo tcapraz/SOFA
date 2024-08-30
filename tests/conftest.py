@@ -1,6 +1,7 @@
 import pytest
 from sofa.models.SOFA import SOFA
 import torch
+import sofa
 
 @pytest.fixture(scope="session", name="sample_model")
 def simulated_model():
@@ -13,11 +14,11 @@ def simulated_model():
     sigma_response = [0.1]
     guide_llh = ["gaussian"]
     design = torch.tensor([[1, 0], [0, 0]])
-    k = [2]
+    k = [1]
     y_dim = [1]
-
+    sigma_data = [1,1]
     model = SOFA()
-    X, Y, W, Z, beta, beta0, lam_feature, tau = model._simulate(sigma_data=1, 
+    X, Y, W, Z, beta, beta0, lam_feature, tau = model._simulate(sigma_data=sigma_data, 
                                               num_views=num_views,
                                               num_features=num_features, 
                                               num_samples=num_samples, 
@@ -40,3 +41,9 @@ def simulated_model():
     model.tau = tau
     model.isfit = True
     return model
+
+@pytest.fixture(scope="session", name="sample_data")
+def sample_data():
+    x = np.random.normal(0,1,(10,10))
+    data = pd.DataFrame(x, columns=[f"feature_{i}" for i in range(x.shape[1])])
+    return sofa.tl.get_ad(data)

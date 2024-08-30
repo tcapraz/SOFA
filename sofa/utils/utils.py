@@ -237,7 +237,7 @@ def get_top_loadings(model,view, factor=0, sign="+", top_n=100):
         topW = W.index[idx]
     return topW
 
-def get_gsea_enrichment(gene_list, db):
+def get_gsea_enrichment(gene_list, db, background):
     """
     Get gene set enrichment analysis results based on a gene_list using gseapy.
 
@@ -247,7 +247,8 @@ def get_gsea_enrichment(gene_list, db):
         List of strings containing gene names.
     db : list
         List of strings containing database names to be used for enrichment analysis.
-
+    background : list
+        List of strings containing gene names to be used as background.
     Returns
     -------
     Enrichr object
@@ -256,7 +257,8 @@ def get_gsea_enrichment(gene_list, db):
     enr = gp.enrichr(gene_list=gene_list, # or "./tests/data/gene_list.txt",
                      gene_sets=[db],
                      organism='human', # don't forget to set organism to the one you desired! e.g. Yeast
-                     outdir=None, # don't write to disk
+                     outdir=None,# don't write to disk
+                     background=background 
                     )
     return enr
 
