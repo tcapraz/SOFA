@@ -211,13 +211,14 @@ that is explained by each factor.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="sofa.utils.utils.get_gsea_enrichment">
-<span class="sig-prename descclassname"><span class="pre">sofa.utils.utils.</span></span><span class="sig-name descname"><span class="pre">get_gsea_enrichment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gene_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">db</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sofa.utils.utils.get_gsea_enrichment" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">sofa.utils.utils.</span></span><span class="sig-name descname"><span class="pre">get_gsea_enrichment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gene_list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">db</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">background</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sofa.utils.utils.get_gsea_enrichment" title="Permalink to this definition"></a></dt>
 <dd><p>Get gene set enrichment analysis results based on a gene_list using gseapy.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>gene_list</strong> (<em>list</em>) – List of strings containing gene names.</p></li>
 <li><p><strong>db</strong> (<em>list</em>) – List of strings containing database names to be used for enrichment analysis.</p></li>
+<li><p><strong>background</strong> (<em>list</em>) – List of strings containing gene names to be used as background.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
