@@ -2,6 +2,7 @@ import pytest
 from sofa.models.SOFA import SOFA
 import torch
 from muon import MuData
+import numpy as np
 
 def test_SOFA_initialization():
     Xmdata = None

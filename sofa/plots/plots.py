@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import scipy.stats as stats
-from ..utils.utils import calc_var_explained, calc_var_explained_view, get_gsea_enrichment
+from ..utils.utils import calc_var_explained, calc_var_explained_view, get_gsea_enrichment, get_W
 from ..models.SOFA import SOFA
 import pandas as pd
 import numpy as np
@@ -41,7 +41,7 @@ def plot_loadings(
     
     if not hasattr(model, f"W"):
         model.W = [model.predict(f"W_{i}", num_split=10000) for i in range(len(model.X))] 
-    W = pd.DataFrame(model.W[view], columns=model.Xmdata.mod[list(model.Xmdata.mod.keys())[view]].var_names)
+    W = get_W(model, view)
     W = W.loc[factor, :]
     W_sorted = W.sort_values()
     labels = np.array(W_sorted.index.tolist())
@@ -90,8 +90,7 @@ def plot_top_loadings(
     if not hasattr(model, f"W"):
         model.W = [model.predict(f"W_{i}", num_split=10000) for i in range(len(model.X))]
         
-    W = pd.DataFrame(model.W[view], columns = model.Xmdata.mod[list(model.Xmdata.mod.keys())[view]].var_names)
-    
+    W = get_W(model, view)
     W = W.loc[factor,:]
 
     if sign ==None:
@@ -323,7 +322,7 @@ def plot_factor_covariate_cor(
 
 def plot_fit(
         model: SOFA,
-        view: int
+        view: str
         ) -> Axes:
     """
     Plot the scatter plot with predicted X vs input X, to assess the model fit.
@@ -332,16 +331,16 @@ def plot_fit(
     ----------
     model : SOFA
         The trained SOFA model.
-    view : int
-        The index of the view to plot.
+    view : str
+        The name of the view to plot.
 
     Returns
     -------
     matplotlib Axes object
         Scatter plot with predicted X vs input X.
     """
-    X = model.X[view].cpu().numpy()
-    X_pred = model.X_pred[view]
+    X = model.Xmdata.mod[model.views.index(view)].cpu().numpy()
+    X_pred = model.X_pred[model.views.index(view)]
 
     fig, ax = plt.subplots(1)
     ax.scatter(X, X_pred, alpha=0.2, s=1)

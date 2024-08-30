@@ -2,6 +2,8 @@ import pytest
 from sofa.models.SOFA import SOFA
 import torch
 import sofa
+import numpy as np
+import pandas as pd
 
 @pytest.fixture(scope="session", name="sample_model")
 def simulated_model():
@@ -31,8 +33,8 @@ def simulated_model():
                                               return_data=True, 
                                               k=k, 
                                               y_dim=y_dim)
-    model.X = X
-    model.Y = Y
+    model.X = [torch.tensor(i) for i in X]
+    model.Y = [torch.tensor(i) for i in Y]
     model.W = W
     model.Z = Z
     model.beta = beta
@@ -40,6 +42,8 @@ def simulated_model():
     model.lam_feature = lam_feature
     model.tau = tau
     model.isfit = True
+    model.views = ["view1", "view2"]
+    model.metadata = pd.DataFrame(np.random.normal(0,1,(num_samples, 5)), columns=[f"covariate_{i}" for i in range(5)])
     return model
 
 @pytest.fixture(scope="session", name="sample_data")
