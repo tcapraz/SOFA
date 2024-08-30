@@ -1,3 +1,3 @@
-from .plots import plot_factor_covariate_cor, plot_factor_covariate_cor_dot, plot_fit, plot_top_weights, plot_variance_explained, plot_variance_explained_view, plot_variance_explained_factor,  plot_weights, plot_enrichment, plot_variance_explained_group
+from .plots import plot_factor_covariate_cor, plot_fit, plot_top_loadings, plot_variance_explained, plot_variance_explained_view, plot_variance_explained_factor,  plot_loadings, plot_enrichment, plot_variance_explained_group
 
-__all__ = ['plot_factor_covariate_cor','plot_factor_covariate_cor_dot', 'plot_fit', 'plot_top_weights', 'plot_variance_explained', 'plot_variance_explained_view', 'plot_variance_explained_factor',  'plot_weights', 'plot_enrichment', "plot_variance_explained_group"]
+__all__ = ['plot_factor_covariate_cor', 'plot_fit', 'plot_top_loadings', 'plot_variance_explained', 'plot_variance_explained_view', 'plot_variance_explained_factor',  'plot_loadings', 'plot_enrichment', "plot_variance_explained_group"]
