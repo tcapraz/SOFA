@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from typing import Union, List
 import numpy as np
 import matplotlib.pyplot as plt
@@ -32,7 +33,6 @@ def plot_loadings(
         The name of the view to plot the loadings for.
     factor : int, optional
         The index of the factor to plot the loadings for. Default is 0.
-
     Returns
     -------
     matplotlib Axes object
@@ -80,7 +80,8 @@ def plot_top_loadings(
         If "+" or "-", plot the top positive or negative loadings, respectively.
     highlight : list, optional
         A list of feature names to highlight in red, by default None.
-
+    ax : matplotlib Axes object, optional
+        The axes to plot on. If None, a new figure is created.
     Returns
     -------
     matplotlib  Axes object
