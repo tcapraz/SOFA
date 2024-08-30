@@ -307,8 +307,7 @@ def plot_factor_covariate_cor(
     else:
         y_labels = np.arange(1,model.num_factors+1)
     cormat = np.stack(cor)
-    if not horizontal: 
-        cormat = cormat.T
+
     divnorm=colors.TwoSlopeNorm(vmin=-1, vcenter=0., vmax=1)
     
     if ax is None:
