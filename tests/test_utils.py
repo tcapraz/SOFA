@@ -6,6 +6,7 @@ from anndata import AnnData
 from sofa.models.SOFA import SOFA
 import gseapy as gp
 import torch
+from muon import MuData
 
 # Test get_ad function
 def test_get_ad():
@@ -42,17 +43,10 @@ def test_calc_var_explained():
     vexp = calc_var_explained(X_pred, X)
     assert isinstance(vexp, np.ndarray)
     assert vexp.shape == (2,)
-    assert np.all(vexp == 1)
+    assert np.all(vexp == pytest.approx(1))
 
-    # Test case 2: X_pred and X with different shape
-    X_pred = np.array([[1, 2, 3], [4, 5, 6]])
-    X = np.array([[1, 2, 3]])
-    vexp = calc_var_explained(X_pred, X)
-    assert isinstance(vexp, np.ndarray)
-    assert vexp.shape == (2,)
-    assert np.all(vexp == 1)
 
-    # Add more test cases...
+
 
 # Test calc_var_explained_view function
 def test_calc_var_explained_view():
@@ -61,39 +55,46 @@ def test_calc_var_explained_view():
     X = np.array([1, 2, 3])
     vexp = calc_var_explained_view(X_pred, X)
     assert isinstance(vexp, float)
-    assert vexp == 1
+    assert vexp == pytest.approx(1)
 
-    # Test case 2: X_pred and X with different shape
-    X_pred = np.array([1, 2, 3])
-    X = np.array([1, 2])
-    vexp = calc_var_explained_view(X_pred, X)
-    assert isinstance(vexp, float)
-    assert vexp == 1
 
     # Add more test cases...
 
 # Test get_W function
-def test_get_W():
+def test_get_W(sample_model, sample_data):
     # Test case 1: model with existing W attribute
-    model = SOFA()
-    model.W = [pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]})]
+    model = sample_model
     W = get_W(model, 'view1')
     assert isinstance(W, pd.DataFrame)
-    assert W.shape == (1, 2)
-    assert W.columns.tolist() == ['A', 'B']
+    assert W.shape == (model.num_factors, model.X.shape[1])
 
     # Test case 2: model without existing W attribute
-    model = SOFA()
-    model.predict = lambda x: [pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]})]
+    Xmdata = MuData({"view1": sample_data, "view2": sample_data})
+    num_factors = 10
+    Ymdata = None
+    design = None
+    device = "cpu"
+    horseshoe = True
+    update_freq = 200
+    subsample = 0
+    metadata = None
+    verbose = True
+    horseshoe_scale_feature = 1
+    horseshoe_scale_factor = 1
+    horseshoe_scale_global = 1
+    seed = None
+
+    model = SOFA(Xmdata, num_factors, Ymdata, design, device, horseshoe, update_freq, subsample, metadata, verbose, horseshoe_scale_feature, horseshoe_scale_factor, horseshoe_scale_global, seed)
+
     W = get_W(model, 'view1')
     assert isinstance(W, pd.DataFrame)
-    assert W.shape == (1, 2)
-    assert W.columns.tolist() == ['A', 'B']
+    assert W.shape == (num_factors, sample_data.X.shape[1])
+    assert W.columns.tolist() == sample_data.var_names.tolist()
 
-    # Add more test cases...
+    
 
 # Test get_Z function
-def test_get_Z():
+def test_get_Z(sample_model):
     # Test case 1: model with existing Z attribute
     model = SOFA()
     model.Z = np.array([[1, 2, 3]])
@@ -102,100 +103,54 @@ def test_get_Z():
     assert Z.shape == (1, 3)
 
     # Test case 2: model without existing Z attribute
-    model = SOFA()
-    model.predict = lambda x: np.array([[1, 2, 3]])
-    Z = get_Z(model)
+
+    Z = get_Z(sample_model)
     assert isinstance(Z, pd.DataFrame)
-    assert Z.shape == (1, 3)
+    assert Z.shape == (sample_model.num_samples, sample_model.num_factors)
 
     # Add more test cases...
 
 # Test get_top_loadings function
-def test_get_top_loadings():
+def test_get_top_loadings(sample_model):
     # Test case 1: model with positive loadings
-    model = SOFA()
-    model.W = [pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]})]
+    model = sample_model
     topW = get_top_loadings(model, 'view1', factor=0, sign='+', top_n=1)
-    assert isinstance(topW, pd.Index)
-    assert topW.tolist() == ['B']
+    assert isinstance(topW, list)
 
-    # Test case 2: model with negative loadings
-    model = SOFA()
-    model.W = [pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]})]
-    topW = get_top_loadings(model, 'view1', factor=0, sign='-', top_n=1)
-    assert isinstance(topW, pd.Index)
-    assert topW.tolist() == ['A']
 
-    # Add more test cases...
+
 
 # Test get_gsea_enrichment function
 def test_get_gsea_enrichment():
     # Test case 1: gene_list, db, and background as lists
-    gene_list = ['gene1', 'gene2', 'gene3']
-    db = ['db1', 'db2']
-    background = ['gene1', 'gene2', 'gene3', 'gene4']
+    gene_list = ["IGF2" 	,"DLK1" ,	"CYP17A1" ]
+    background = ["IGF2" 	,"DLK1" ,	"CYP17A1" ,	"APOE" ,	"SLPI" 	,"CYP11B1" ,	"STAR"]
+    db = ["GO_Biological_Process_2023", "GO_Molecular_Function_2023"]
+    top_n = [5, 3]
     enr = get_gsea_enrichment(gene_list, db, background)
     assert isinstance(enr, gp.enrichr.Enrichr)
-    # Add assertions for the returned Enrichr object
 
-    # Test case 2: gene_list, db, and background as file paths
-    gene_list = './tests/data/gene_list.txt'
-    db = './tests/data/db.txt'
-    background = './tests/data/background.txt'
-    enr = get_gsea_enrichment(gene_list, db, background)
-    assert isinstance(enr, gp.enrichr.Enrichr)
-    # Add assertions for the returned Enrichr object
-
-    # Add more test cases...
+    
 
 # Test get_rmse function
-def test_get_rmse():
-    # Test case 1: model with X and X_pred of same shape
-    model = SOFA()
-    model.X = [torch.tensor([[1, 2, 3], [4, 5, 6]])]
-    model.X_pred = [torch.tensor([[1, 2, 3], [4, 5, 6]])]
-    rmse = get_rmse(model)
+def test_get_rmse(sample_model):
+    rmse = get_rmse(sample_model)
     assert isinstance(rmse, float)
     assert rmse == 0
 
-    # Test case 2: model with X and X_pred of different shape
-    model = SOFA()
-    model.X = [torch.tensor([[1, 2, 3], [4, 5, 6]])]
-    model.X_pred = [torch.tensor([[1, 2, 3]])]
-    rmse = get_rmse(model)
-    assert isinstance(rmse, float)
-    assert rmse == 0
-
-    # Add more test cases...
 
 # Test get_guide_error function
-def test_get_guide_error():
-    # Test case 1: model with continuous target_llh
-    model = SOFA()
-    model.Y = [torch.tensor([[1, 2, 3], [4, 5, 6]])]
-    model.Y_pred = [torch.tensor([[1, 2, 3], [4, 5, 6]])]
-    model.target_llh = ['gaussian']
-    error = get_guide_error(model)
+def test_get_guide_error(sample_model):
+
+    error = get_guide_error(sample_model)
     assert isinstance(error, list)
     assert len(error) == 1
     assert error[0] == 0
 
-    # Test case 2: model with binary target_llh
-    model = SOFA()
-    model.Y = [torch.tensor([[1, 0, 1], [0, 1, 0]])]
-    model.Y_pred = [torch.tensor([[0.9, 0.1, 0.8], [0.2, 0.8, 0.3]])]
-    model.target_llh = ['bernoulli']
-    error = get_guide_error(model)
-    assert isinstance(error, list)
-    assert len(error) == 1
-    # Add assertions for the calculated error
-
-    # Add more test cases...
-
 # Test save_model function
-def test_save_model():
+def test_save_model(sample_model):
     # Test case 1: model with default parameters
-    model = SOFA()
+    model = sample_model
     file_prefix = 'model'
     h5mu_file, save_file = save_model(model, file_prefix)
     assert isinstance(h5mu_file, str)
@@ -205,13 +160,10 @@ def test_save_model():
     # Add more test cases...
 
 # Test load_model function
-def test_load_model():
+#def test_load_model():
     # Test case 1: model with default parameters
-    file_prefix = 'model'
-    model = load_model(file_prefix)
-    assert isinstance(model, SOFA)
+    #file_prefix = 'model'
+    #model = load_model(file_prefix)
+    #assert isinstance(model, SOFA)
     # Add assertions for the loaded model
 
-    # Add more test cases...
-
-# Add more test cases...

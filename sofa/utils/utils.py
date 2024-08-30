@@ -236,7 +236,7 @@ def get_top_loadings(model,view, factor=0, sign="+", top_n=100):
     elif sign=="-":
         idx = np.argpartition(W*-1, -top_n)[-top_n:]
         topW = W.index[idx]
-    return topW
+    return topW.tolist()
 
 def get_gsea_enrichment(gene_list, db, background):
     """
@@ -301,13 +301,13 @@ def get_guide_error(model):
     """
     rmse = []
     for ix, (i,j) in enumerate(zip(model.Y, model.Y_pred)):
-        if model.target_llh[ix] == "gaussian":
+        if model.guide_llh[ix] == "gaussian":
             i = i.cpu().numpy()
             rmse.append(np.sqrt(np.sum(np.square(i-j))/(i.shape[0]*i.shape[1])))
-        elif model.target_llh[ix] == "bernoulli":
+        elif model.guide_llh[ix] == "bernoulli":
             i = i.cpu().numpy()
             rmse.append(log_loss(i,sigmoid(j)))
-        elif model.target_llh[ix] == "multinomial":
+        elif model.guide_llh[ix] == "multinomial":
             i = i.cpu().numpy()
             rmse.append(log_loss(i,softmax(j)))
     return rmse
