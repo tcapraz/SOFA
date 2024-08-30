@@ -303,7 +303,7 @@ def plot_factor_covariate_cor(
         y_labels = [i+ str(idx+1) for idx,i in enumerate(y_labels)]
     else:
         y_labels = np.arange(1,model.num_factors+1)
-    cormat = np.stack(cor)
+    cormat = np.stack(cor).T
 
     divnorm=colors.TwoSlopeNorm(vmin=-1, vcenter=0., vmax=1)
     

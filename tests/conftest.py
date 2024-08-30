@@ -4,6 +4,7 @@ import torch
 import sofa
 import numpy as np
 import pandas as pd
+from muon import MuData
 
 @pytest.fixture(scope="session", name="sample_model")
 def simulated_model():
@@ -33,6 +34,8 @@ def simulated_model():
                                               return_data=True, 
                                               k=k, 
                                               y_dim=y_dim)
+    model.Xmdata = MuData({"view1": sofa.tl.get_ad(pd.DataFrame(X[0])), "view2": sofa.tl.get_ad(pd.DataFrame(X[1]))})
+
     model.X = [torch.tensor(i) for i in X]
     model.Y = [torch.tensor(i) for i in Y]
     model.W = W

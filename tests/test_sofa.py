@@ -81,7 +81,7 @@ def test_SOFA_predict(sample_data):
     model.fit(n_steps=100, lr=0.01)
 
     Z_pred = model.predict("Z")
-    W_pred = model.predict("W")
+    W_pred = [model.predict(f"W_{i}") for i in range(len(model.X))]
 
     assert Z_pred.shape == (model.num_samples, model.num_factors)
     assert W_pred[0].shape == (model.num_factors, sample_data.shape[1])
@@ -123,9 +123,10 @@ def test_SOFA_simulate():
     design = torch.tensor([[1, 0], [0, 0]])
     k = [2]
     y_dim = [1]
+    sigma_data = [1,1]
 
     model = SOFA()
-    X, Y, W, Z, beta, beta0 = model._simulate(sigma_data=1, 
+    X, Y, W, Z, beta, beta0 = model._simulate(sigma_data=sigma_data, 
                                               num_views=num_views,
                                               num_features=num_features, 
                                               num_samples=num_samples, 
