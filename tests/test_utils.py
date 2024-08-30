@@ -66,7 +66,7 @@ def test_get_W(sample_model, sample_data):
     model = sample_model
     W = get_W(model, 'view1')
     assert isinstance(W, pd.DataFrame)
-    assert W.shape == (model.num_factors, model.X.shape[1])
+    assert W.shape == (model.num_factors, model.X[0].shape[1])
 
     # Test case 2: model without existing W attribute
     Xmdata = MuData({"view1": sample_data, "view2": sample_data})

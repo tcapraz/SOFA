@@ -36,7 +36,6 @@ def simulated_model():
                                               y_dim=y_dim)
     model.Xmdata = MuData({"view1": sofa.tl.get_ad(pd.DataFrame(X[0])), "view2": sofa.tl.get_ad(pd.DataFrame(X[1]))})
     model.Ymdata = MuData({"guide1": sofa.tl.get_ad(pd.DataFrame(Y[0]))})
-
     model.X = [torch.tensor(i) for i in X]
     model.Y = [torch.tensor(i) for i in Y]
     model.W = W
@@ -48,6 +47,7 @@ def simulated_model():
     model.isfit = True
     model.views = ["view1", "view2"]
     model.metadata = pd.DataFrame(np.random.normal(0,1,(num_samples, 5)), columns=[f"covariate_{i}" for i in range(5)])
+    model.relative_guide_scale = [1]
     return model
 
 @pytest.fixture(scope="session", name="sample_data")
