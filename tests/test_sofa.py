@@ -126,7 +126,7 @@ def test_SOFA_simulate():
     sigma_data = [1,1]
 
     model = SOFA()
-    X, Y, W, Z, beta, beta0 = model._simulate(sigma_data=sigma_data, 
+    X,Y, W,Z, beta, beta0, lam_feature, tau = model._simulate(sigma_data=sigma_data, 
                                               num_views=num_views,
                                               num_features=num_features, 
                                               num_samples=num_samples, 

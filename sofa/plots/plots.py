@@ -45,7 +45,8 @@ def plot_loadings(
     W = W.loc[factor, :]
     W_sorted = W.sort_values()
     labels = np.array(W_sorted.index.tolist())
-    labels[10:len(labels)-10] = ""
+    if len(labels) > 20:
+        labels[10:len(labels)-10] = ""
     x = [i for i in range(len(W_sorted))]
     fig, ax = plt.subplots(1)
     ax.scatter(x, W_sorted)
@@ -339,7 +340,7 @@ def plot_fit(
     matplotlib Axes object
         Scatter plot with predicted X vs input X.
     """
-    X = model.Xmdata.mod[view].cpu().numpy()
+    X = model.X[model.views.index(view)].cpu().numpy()
     X_pred = model.X_pred[model.views.index(view)]
 
     fig, ax = plt.subplots(1)

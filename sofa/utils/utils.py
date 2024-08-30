@@ -13,6 +13,7 @@ from typing import Union
 import numpy as np
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 import gseapy as gp
+from sklearn.metrics import log_loss, accuracy_score
 
 def get_ad(data: pd.DataFrame, 
            llh: str="gaussian", 
