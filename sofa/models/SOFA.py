@@ -616,8 +616,9 @@ class SOFA:
             self.W = [self.predict(f"W_{i}") for i in range(len(self.X))]
         if not hasattr(self, f"X_pred"):
             self.X_pred = [self.predict(f"X_{i}") for i in range(len(self.X))]
-        if not hasattr(self, f"Y_pred") and self.Y is not None:
-            self.Y_pred = [self.predict(f"Y_{i}") for i in range(len(self.Y))]
+        if self.Ymdata is not None:
+            if not hasattr(self, f"Y_pred") and self.Y is not None:
+                self.Y_pred = [self.predict(f"Y_{i}") for i in range(len(self.Y))]
         
         datadict = self.Xmdata.mod.copy()
         if self.Y is not None:

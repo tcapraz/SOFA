@@ -299,6 +299,15 @@ def get_guide_error(model):
         The root mean squared error for continuous, binary crossentropy for binary or 
         categorical cross entropy for categorical Y of the model.
     """
+    if model.Ymdata is None:
+        raise ValueError("Model does not have guide variables!")
+    if hasattr(model, "Y_pred"):
+        Y_pred = model.Y_pred
+    else:
+        model.Y_pred = []
+        for i in range(len(model.Y)):
+            model.Y_pred.append(model.predict(f"Y_{i}"))
+
     rmse = []
     for ix, (i,j) in enumerate(zip(model.Y, model.Y_pred)):
         if model.guide_llh[ix] == "gaussian":

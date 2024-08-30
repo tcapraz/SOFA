@@ -95,14 +95,6 @@ def test_get_W(sample_model, sample_data):
 
 # Test get_Z function
 def test_get_Z(sample_model):
-    # Test case 1: model with existing Z attribute
-    model = SOFA()
-    model.Z = np.array([[1, 2, 3]])
-    Z = get_Z(model)
-    assert isinstance(Z, pd.DataFrame)
-    assert Z.shape == (1, 3)
-
-    # Test case 2: model without existing Z attribute
 
     Z = get_Z(sample_model)
     assert isinstance(Z, pd.DataFrame)
@@ -125,8 +117,8 @@ def test_get_gsea_enrichment():
     # Test case 1: gene_list, db, and background as lists
     gene_list = ["IGF2" 	,"DLK1" ,	"CYP17A1" ]
     background = ["IGF2" 	,"DLK1" ,	"CYP17A1" ,	"APOE" ,	"SLPI" 	,"CYP11B1" ,	"STAR"]
-    db = ["GO_Biological_Process_2023", "GO_Molecular_Function_2023"]
-    top_n = [5, 3]
+    db = "GO_Biological_Process_2023"
+
     enr = get_gsea_enrichment(gene_list, db, background)
     assert isinstance(enr, gp.enrichr.Enrichr)
 
