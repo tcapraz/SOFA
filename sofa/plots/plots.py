@@ -297,9 +297,6 @@ def plot_factor_covariate_cor(
         cor.append([stats.pearsonr(model.Z[mask,z], y)[0] for z in range(model.Z.shape[1])])
 
     if model.Ymdata is not None:
-
-        Ymdata = model.Ymdata
-
         y_labels = model.Ymdata.mod
         y_labels = ["(" +i +") " for i in y_labels]
         y_labels = y_labels + ["" for i in range(model.Z.shape[1] - len(y_labels))]
