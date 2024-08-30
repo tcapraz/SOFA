@@ -170,10 +170,10 @@ def get_W(model: SOFA,
         DataFrame containing the loadings of the model for the specified view.
     """
     if hasattr(model, f"W"):
-        W = pd.DataFrame(model.W[model.views.index(view)], columns = model.Xmdata.mod[model.views[view]].var_names)
+        W = pd.DataFrame(model.W[model.views.index(view)], columns = model.Xmdata.mod[view].var_names)
     else:
         model.W = model.predict("W")
-        W = pd.DataFrame(model.W[model.views.index(view)], columns = model.Xmdata.mod[model.views[view]].var_names)
+        W = pd.DataFrame(model.W[model.views.index(view)], columns = model.Xmdata.mod[view].var_names)
     return W
 
 def get_Z(model: SOFA,

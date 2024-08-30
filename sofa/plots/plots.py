@@ -339,7 +339,7 @@ def plot_fit(
     matplotlib Axes object
         Scatter plot with predicted X vs input X.
     """
-    X = model.Xmdata.mod[model.views.index(view)].cpu().numpy()
+    X = model.Xmdata.mod[view].cpu().numpy()
     X_pred = model.X_pred[model.views.index(view)]
 
     fig, ax = plt.subplots(1)

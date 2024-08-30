@@ -41,7 +41,7 @@ def test_plot_factor_covariate_cor(sample_model):
 
 def test_plot_fit(sample_model):
     # Test plot_fit function
-    ax = plot_fit(sample_model, 0)
+    ax = plot_fit(sample_model, "view1")
     assert ax is not None
     # Add more assertions if needed
 
