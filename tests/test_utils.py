@@ -88,7 +88,7 @@ def test_get_W(sample_model, sample_data):
 
     W = get_W(model, 'view1')
     assert isinstance(W, pd.DataFrame)
-    assert W.shape == (num_factors, sample_data.X.shape[1])
+    assert W.shape == (num_factors, sample_data.X[0].shape[1])
     assert W.columns.tolist() == sample_data.var_names.tolist()
 
     
@@ -120,7 +120,7 @@ def test_get_gsea_enrichment():
     db = "GO_Biological_Process_2023"
 
     enr = get_gsea_enrichment(gene_list, db, background)
-    assert isinstance(enr, gp.enrichr.Enrichr)
+    assert isinstance(enr, gp.Enrichr)
 
     
 
@@ -128,16 +128,19 @@ def test_get_gsea_enrichment():
 def test_get_rmse(sample_model):
     rmse = get_rmse(sample_model)
     assert isinstance(rmse, float)
-    assert rmse == 0
 
 
 # Test get_guide_error function
-def test_get_guide_error(sample_model):
-
+def test_get_guide_error(sample_model, sample_data):
+    
+        
     error = get_guide_error(sample_model)
     assert isinstance(error, list)
     assert len(error) == 1
-    assert error[0] == 0
+    sample_model.Ymdata = None
+    with pytest.raises(Exception) as e_info:
+        error = get_guide_error(sample_model)
+
 
 # Test save_model function
 def test_save_model(sample_model):

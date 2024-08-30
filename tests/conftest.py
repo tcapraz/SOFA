@@ -35,6 +35,7 @@ def simulated_model():
                                               k=k, 
                                               y_dim=y_dim)
     model.Xmdata = MuData({"view1": sofa.tl.get_ad(pd.DataFrame(X[0])), "view2": sofa.tl.get_ad(pd.DataFrame(X[1]))})
+    model.Ymdata = MuData({"guide1": sofa.tl.get_ad(pd.DataFrame(Y[0]))})
 
     model.X = [torch.tensor(i) for i in X]
     model.Y = [torch.tensor(i) for i in Y]

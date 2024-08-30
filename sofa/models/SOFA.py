@@ -633,7 +633,7 @@ class SOFA:
 
         mdata.uns["history"] = self.history
         mdata.uns["seed"] = self.seed
-        if self.Y is not None:
+        if self.Y is not None and self.Ymdata is not None:
             mdata.uns["guide_mod"] = list(self.Ymdata.mod.keys())
             mdata.uns["input_design"] = self.design.cpu().numpy()
             mdata.uns["guide_scale"] = self.relative_guide_scale
