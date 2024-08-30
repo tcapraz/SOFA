@@ -1,29 +1,18 @@
 #!/usr/bin/env python3
 import pyro
 import torch
-import pyro.distributions as dist
-from pyro.infer import SVI, Trace_ELBO
-from pyro.infer import Predictive
 import numpy as np
-from pyro.optim import Adam
-import torch.nn as nn
-from tqdm import tqdm
 import muon as mu
 from muon import MuData
 from sklearn.preprocessing import LabelEncoder
 from anndata import AnnData
-from itertools import product
 from ..models.SOFA import SOFA
-
-import scipy.stats as stats
 import pandas as pd
 import scanpy as sc
 from typing import Union
 import numpy as np
-import anndata as ad
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 import gseapy as gp
-import pickle
 
 def get_ad(data: pd.DataFrame, 
            llh: str="gaussian", 
@@ -216,7 +205,7 @@ def get_Z(model: SOFA,
         Z = pd.DataFrame(model.Z, columns =  col_labels)
     return Z
 
-def get_top_loadings(model,factor=0, view=0, sign="+", top_n=100):
+def get_top_loadings(model,view, factor=0, sign="+", top_n=100):
     """
     Get the top_n loadings of the model for a specific view.
     
@@ -224,10 +213,10 @@ def get_top_loadings(model,factor=0, view=0, sign="+", top_n=100):
     ----------
     model : SOFA
         The trained SOFA model.
-    factor : int
-        Index of the factor to get the top loadings for.
     view : str
         Name of the view to get the loadings for.
+    factor : int
+        Index of the factor to get the top loadings for.
     sign : str
         Sign of the loadings to get. Default is "+".
     top_n : int
@@ -238,7 +227,7 @@ def get_top_loadings(model,factor=0, view=0, sign="+", top_n=100):
         DataFrame containing the top_n loadings of the model for the specified view.
     """
     assert(sign=="+" or sign=="-")
-    W = pd.DataFrame(model.W[model.views.index(view)], columns = model.Xmdata.mod[model.views[view]].var_names)
+    W = get_W(model, view)
     W = W.loc[factor,:]
     if sign == "+":
         idx = np.argpartition(W, -top_n)[-top_n:]
@@ -378,7 +367,6 @@ def load_model(file_prefix):
     num_factors = mdata.uns["input_num_factors"]
     # TODO find way to save and load mixed column metadata
     #metadata = mdata.uns["metadata"]
-    ard = mdata.uns["ard"]
     horseshoe = mdata.uns["horseshoe"]
 
     seed = mdata.uns["seed"]
@@ -387,7 +375,6 @@ def load_model(file_prefix):
                   Ymdata = Ymdata,
                   design = torch.tensor(design),
                   device=torch.device('cuda'),
-                  ard=ard,
                   horseshoe=horseshoe,
                   subsample=0,
                   target_scale=target_scale,
@@ -400,6 +387,5 @@ def load_model(file_prefix):
     
     # load pyro paramstore
     dict_ = pyro.get_param_store()
-
     dict_.load(file_prefix+".save")
     return model
