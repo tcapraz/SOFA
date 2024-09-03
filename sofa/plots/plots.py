@@ -4,8 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import scipy.stats as stats
-from ..utils.utils import calc_var_explained, calc_var_explained_view, get_gsea_enrichment, get_W
-from ..models.SOFA import SOFA
+from ..utils.utils import calc_var_explained,  get_gsea_enrichment, get_W, get_var_explained_per_view_factor
 import pandas as pd
 import numpy as np
 from matplotlib.axes import Axes 
@@ -152,19 +151,8 @@ def plot_variance_explained(
     matplotlib Axes object
         Plot with variance explained by each factor for each view.
     """
-    X = [i.cpu().numpy() for i in model.X]
-    vexp = []
-    if not hasattr(model, "Z"):
-        model.Z = model.predict("Z", num_split=10000)
-    if not hasattr(model, f"W"):
-        model.W = [model.predict(f"W_{i}", num_split=10000) for i in range(len(X))]   
-    for i in range(len(X)):
-        mask = model.Xmask[i].cpu().numpy()
-        X_pred_factor = []
-        for j in range(model.num_factors):
-            X_pred_factor.append(model.Z[mask,j, np.newaxis] @ model.W[i][np.newaxis,j,:])
-        vexp.append(calc_var_explained(X_pred_factor, X[i][mask,:]).reshape(model.num_factors,1))
-    vexp = np.hstack(vexp)
+    
+    vexp = get_var_explained_per_view_factor(model)
     if model.Ymdata is not None:
         y_labels = np.array(["" for i in range(model.num_factors)], dtype=object)
         guided_factors = list(model.Ymdata.mod.keys())
@@ -207,26 +195,24 @@ def plot_variance_explained_factor(model: SOFA,
         Plot with variance explained by each factor.
     """    
  
-    X = [i.cpu().numpy() for i in model.X]
-    vexp = []
-    if not hasattr(model, "Z"):
-        model.Z = model.predict("Z", num_split=10000)
-    if not hasattr(model, f"W"):
-        model.W = [model.predict(f"W_{i}", num_split=10000) for i in range(len(X))]   
-    for i in range(len(X)):
-        mask = model.Xmask[i].cpu().numpy()
-        X_pred_factor = []
-        for j in range(model.num_factors):
-            X_pred_factor.append(model.Z[mask,j, np.newaxis] @ model.W[i][np.newaxis,j,:])
-        vexp.append(calc_var_explained(X_pred_factor, X[i][mask,:]).reshape(model.num_factors,1))
-    vexp = np.hstack(vexp)
+    vexp = get_var_explained_per_view_factor(model)
     vexp = np.sum(vexp, axis=1)
+    if model.Ymdata is not None:
+        x_labels = np.array(["" for i in range(model.num_factors)], dtype=object)
+        guided_factors = list(model.Ymdata.mod.keys())
+        for i in range(len(guided_factors)):
+            s =  "(" + guided_factors[i] + ")"
+            x_labels[model.design.cpu().numpy()[i,:]==1] =s
 
+        for i in range(model.num_factors):
+            x_labels[i] = x_labels[i] + f" {i+1}"
+    else:
+        x_labels = np.arange(1,model.num_factors+1)
     fig, ax = plt.subplots(1)
     plot = ax.bar(["Factor"+ str(i+1) for  i in range(len(vexp))], vexp)
     ax.set_xlabel("View")
     ax.set_ylabel("R2")
-    ax.set_xticklabels(["Factor"+ str(i+1) for  i in range(len(vexp))],rotation=90)
+    ax.set_xticklabels(x_labels,rotation=90)
     return ax
 
 def plot_variance_explained_view(model: SOFA,
@@ -254,7 +240,7 @@ def plot_variance_explained_view(model: SOFA,
         
     for i in range(len(X)):
         mask = model.Xmask[i].cpu().numpy()
-        vexp.append(calc_var_explained_view(model.X_pred[i][mask,:], X[i][mask,:]))
+        vexp.append(calc_var_explained(model.X_pred[i][mask,:], X[i][mask,:]))
 
     fig, ax = plt.subplots(1)
     plot = ax.bar(["view"+ str(i) for  i in range(len(vexp))], vexp)

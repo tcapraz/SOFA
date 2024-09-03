@@ -102,8 +102,62 @@ def get_ad(data: pd.DataFrame,
 
     return adata
 
-
 def calc_var_explained(X_pred, X):
+    """
+    Calculate R2 for X and X_pred.
+
+    Parameters
+    ----------
+    X_pred : numpy.array
+        Predicted X.
+    X : numpy.array
+        Input X.
+
+    Returns
+    -------
+    float
+        R2 value for X and X_pred.
+    """
+    num = np.sum(np.square(X-X_pred))
+    denom = np.sum(np.square(X))
+    vexp= 1 - num/denom
+    if vexp < 0:
+        vexp = 0    
+    return vexp
+
+
+
+def get_var_explained_per_view_factor(model: SOFA):
+    """
+    Calculate the fraction of variance of each view
+    that is explained by each factor.
+    Parameters
+    ----------
+    model : SOFA
+        The trained SOFA model.
+    Returns
+    -------
+    numpy.array
+        Array containing the fraction of variance of each view
+        that is explained by each factor.
+    """
+    X = [i.cpu().numpy() for i in model.X]
+    vexp = []
+    if not hasattr(model, "Z"):
+        model.Z = model.predict("Z", num_split=10000)
+    if not hasattr(model, f"W"):
+        model.W = [model.predict(f"W_{i}", num_split=10000) for i in range(len(X))]   
+    for i in range(len(X)):
+        mask = model.Xmask[i].cpu().numpy()
+        vexp_factor = []
+        for j in range(model.num_factors):
+            X_pred_factor = model.Z[mask,j, np.newaxis] @ model.W[i][np.newaxis,j,:]
+            vexp_factor.append(calc_var_explained(X_pred_factor, X[i][mask,:]))
+        vexp.append(np.stack(vexp_factor).reshape(model.num_factors,1))
+    vexp = np.hstack(vexp)
+    return vexp
+
+def calc_var_explained_(X_pred, X):
     """
     Calculate the fraction of variance of each view 
     that is explained by each factor.
@@ -130,27 +184,7 @@ def calc_var_explained(X_pred, X):
     vexp[vexp < 0] = 0
     return vexp
 
-def calc_var_explained_view(X_pred, X):
-    """
-    Calculate the total fraction of variance explained of each view.
 
-    Parameters
-    ----------
-    X_pred : np.array
-        Predicted X.
-    X : np.array
-        Input X.
-
-    Returns
-    -------
-    numpy.array
-        Array containing the total fraction of variance of each view.
-    """
-    vexp = []
-    vexp = 1 - np.sum((np.square(X-X_pred)))/np.sum(np.square(X))
-    if vexp < 0:
-        vexp = 0
-    return vexp
 
 def get_W(model: SOFA,
           view: str
@@ -263,9 +297,28 @@ def get_gsea_enrichment(gene_list, db, background):
                     )
     return enr
 
+def calc_rmse(X, X_pred):
+    """
+    Calculate the root mean squared error between X and X_pred.
+
+    Parameters
+    ----------
+    X_pred : numpy.array
+        Predicted X.
+    X : numpy.array
+        Input X.
+
+    Returns
+    -------
+    float
+        The root mean squared error of X of the model.
+    """
+    rmse = np.sqrt(np.sum(np.square(X-X_pred))/(X.shape[0]*X.shape[1]))
+    return rmse
+
 def get_rmse(model):
     """
-    Calculate the root mean squared error of X of the model.
+    Calculate the root mean squared error of the model.
 
     Parameters
     ----------
@@ -274,14 +327,21 @@ def get_rmse(model):
 
     Returns
     -------
-    float
-        The root mean squared error of X of the model.
+    dict
+        The root mean squared error of X of the model for each view.
     """
-    rmse = 0
-    for i,j in zip(model.X, model.X_pred):
-        i = i.cpu().numpy()
-        rmse += np.sqrt(np.sum(np.square(i-j))/(i.shape[0]*i.shape[1]))
+    if not hasattr(model, f"X_pred"):
+        model.X_pred = [model.predict(f"X_{i}", num_split=10000) for i in range(len(model.X))]
+    rmse = {}
+    for i in range(len(model.X)):
+        rmse[model.views[i]] = calc_rmse(model.X[i].cpu().numpy(), model.X_pred[i])
     return rmse
+
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+def softmax(x):
+    return np.exp(x) / np.sum(np.exp(x))
 
 def get_guide_error(model):
     """
@@ -295,31 +355,28 @@ def get_guide_error(model):
 
     Returns
     -------
-    float
-        The root mean squared error for continuous, binary crossentropy for binary or 
+    dict
+        Containing the root mean squared error for continuous, binary crossentropy for binary or 
         categorical cross entropy for categorical Y of the model.
     """
     if model.Ymdata is None:
         raise ValueError("Model does not have guide variables!")
-    if hasattr(model, "Y_pred"):
-        Y_pred = model.Y_pred
-    else:
+    if not hasattr(model, "Y_pred"):
         model.Y_pred = []
         for i in range(len(model.Y)):
             model.Y_pred.append(model.predict(f"Y_{i}"))
 
-    rmse = []
+    error = {}
+
     for ix, (i,j) in enumerate(zip(model.Y, model.Y_pred)):
+        i = i.cpu().numpy()
         if model.guide_llh[ix] == "gaussian":
-            i = i.cpu().numpy()
-            rmse.append(np.sqrt(np.sum(np.square(i-j))/(i.shape[0]*i.shape[1])))
-        elif model.guide_llh[ix] == "bernoulli":
-            i = i.cpu().numpy()
-            rmse.append(log_loss(i,sigmoid(j)))
+            error[model.guide_views[ix]]= calc_rmse(i,j)
+        elif model.guide_llh[ix] == "bernoulli": 
+            error[model.guide_views[ix]] = log_loss(i,sigmoid(j))
         elif model.guide_llh[ix] == "multinomial":
-            i = i.cpu().numpy()
-            rmse.append(log_loss(i,softmax(j)))
-    return rmse
+            error[model.guide_views[ix]] = log_loss(i,softmax(j))
+    return error
 
 
 def save_model(model, file_prefix):
