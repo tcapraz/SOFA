@@ -15,6 +15,7 @@ import seaborn as sns
 from matplotlib.ticker import FuncFormatter
 from matplotlib.colorbar import ColorbarBase
 from matplotlib.colors import Normalize
+from ..models.SOFA import SOFA
 
 def plot_loadings(
         model: SOFA, 

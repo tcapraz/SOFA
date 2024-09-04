@@ -1,5 +1,5 @@
 import pytest
-from sofa.utils.utils import get_ad, calc_var_explained, calc_var_explained_view, get_W, get_Z, get_top_loadings, get_gsea_enrichment, get_rmse, get_guide_error, save_model, load_model
+from sofa.utils.utils import get_ad, calc_var_explained,  get_W, get_Z, get_top_loadings, get_gsea_enrichment, get_rmse, get_guide_error, save_model, load_model
 import pandas as pd
 import numpy as np
 from anndata import AnnData
@@ -7,6 +7,7 @@ from sofa.models.SOFA import SOFA
 import gseapy as gp
 import torch
 from muon import MuData
+import pyro
 
 # Test get_ad function
 def test_get_ad():
@@ -41,21 +42,12 @@ def test_calc_var_explained():
     X_pred = np.array([[1, 2, 3], [4, 5, 6]])
     X = np.array([[1, 2, 3], [4, 5, 6]])
     vexp = calc_var_explained(X_pred, X)
-    assert isinstance(vexp, np.ndarray)
-    assert vexp.shape == (2,)
+    assert isinstance(vexp, float)
     assert np.all(vexp == pytest.approx(1))
 
 
 
 
-# Test calc_var_explained_view function
-def test_calc_var_explained_view():
-    # Test case 1: X_pred and X with same shape
-    X_pred = np.array([1, 2, 3])
-    X = np.array([1, 2, 3])
-    vexp = calc_var_explained_view(X_pred, X)
-    assert isinstance(vexp, float)
-    assert vexp == pytest.approx(1)
 
 
     # Add more test cases...
@@ -84,21 +76,49 @@ def test_get_W(sample_model, sample_data):
     horseshoe_scale_global = 1
     seed = None
 
+    # check if prediction works
     model = SOFA(Xmdata, num_factors, Ymdata, design, device, horseshoe, update_freq, subsample, metadata, verbose, horseshoe_scale_feature, horseshoe_scale_factor, horseshoe_scale_global, seed)
 
     W = get_W(model, 'view1')
     assert isinstance(W, pd.DataFrame)
-    assert W.shape == (num_factors, sample_data.X[0].shape[1])
+    assert W.shape == (num_factors, sample_data.X.shape[1])
     assert W.columns.tolist() == sample_data.var_names.tolist()
+    pyro.clear_param_store()
 
-    
+
 
 # Test get_Z function
-def test_get_Z(sample_model):
+def test_get_Z(sample_model, sample_data):
 
     Z = get_Z(sample_model)
     assert isinstance(Z, pd.DataFrame)
     assert Z.shape == (sample_model.num_samples, sample_model.num_factors)
+
+    # test if prediction works
+    # Test case 2: model without existing W attribute
+    Xmdata = MuData({"view1": sample_data, "view2": sample_data})
+    num_factors = 10
+    Ymdata = None
+    design = None
+    device = "cpu"
+    horseshoe = True
+    update_freq = 200
+    subsample = 0
+    metadata = None
+    verbose = True
+    horseshoe_scale_feature = 1
+    horseshoe_scale_factor = 1
+    horseshoe_scale_global = 1
+    seed = None
+
+    # check if prediction works
+    model = SOFA(Xmdata, num_factors, Ymdata, design, device, horseshoe, update_freq, subsample, metadata, verbose, horseshoe_scale_feature, horseshoe_scale_factor, horseshoe_scale_global, seed)
+
+    Z = get_Z(model)
+
+    assert isinstance(Z, pd.DataFrame)
+    assert Z.shape == (model.num_samples, model.num_factors)
+    pyro.clear_param_store()
 
     # Add more test cases...
 
@@ -108,6 +128,8 @@ def test_get_top_loadings(sample_model):
     model = sample_model
     topW = get_top_loadings(model, 'view1', factor=0, sign='+', top_n=1)
     assert isinstance(topW, list)
+    pyro.clear_param_store()
+
 
 
 
@@ -127,16 +149,37 @@ def test_get_gsea_enrichment():
 # Test get_rmse function
 def test_get_rmse(sample_model):
     rmse = get_rmse(sample_model)
-    assert isinstance(rmse, float)
+    assert isinstance(rmse, dict)
+    assert isinstance(rmse['view1'], float)
+    pyro.clear_param_store()
+
 
 
 # Test get_guide_error function
 def test_get_guide_error(sample_model, sample_data):
-    
-        
+    # Xmdata = MuData({"view1": sample_data, "view2": sample_data})
+    # num_factors = 10
+    # Ymdata = None
+    # design = None
+    # device = "cpu"
+    # horseshoe = True
+    # update_freq = 200
+    # subsample = 0
+    # metadata = None
+    # verbose = True
+    # horseshoe_scale_feature = 1
+    # horseshoe_scale_factor = 1
+    # horseshoe_scale_global = 1
+    # seed = None
+
+    # # check if prediction works
+    # model = SOFA(Xmdata, num_factors, Ymdata, design, device, horseshoe, update_freq, subsample, metadata, verbose, horseshoe_scale_feature, horseshoe_scale_factor, horseshoe_scale_global, seed)
+    # print(sample_model.num_factors)
+    # print(sample_model.num_features)
+
     error = get_guide_error(sample_model)
-    assert isinstance(error, list)
-    assert len(error) == 1
+    assert isinstance(error, dict)
+    assert isinstance(error["guide1"], float) 
     sample_model.Ymdata = None
     with pytest.raises(Exception) as e_info:
         error = get_guide_error(sample_model)
@@ -150,6 +193,8 @@ def test_save_model(sample_model):
     h5mu_file, save_file = save_model(model, file_prefix)
     assert isinstance(h5mu_file, str)
     assert isinstance(save_file, str)
+    pyro.clear_param_store()
+
     # Add assertions for the existence of the saved files
 
     # Add more test cases...

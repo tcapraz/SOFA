@@ -621,7 +621,7 @@ class SOFA:
                 self.Y_pred = [self.predict(f"Y_{i}") for i in range(len(self.Y))]
         
         datadict = self.Xmdata.mod.copy()
-        if self.Y is not None:
+        if self.Y is not None and self.Ymdata is not None:
             datadict.update(self.Ymdata.mod)
 
         mdata = MuData(datadict)

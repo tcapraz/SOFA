@@ -46,6 +46,7 @@ def simulated_model():
     model.tau = tau
     model.isfit = True
     model.views = ["view1", "view2"]
+    model.guide_views = ["guide1"]
     model.metadata = pd.DataFrame(np.random.normal(0,1,(num_samples, 5)), columns=[f"covariate_{i}" for i in range(5)])
     model.relative_guide_scale = [1]
     return model

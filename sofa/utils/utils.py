@@ -207,7 +207,7 @@ def get_W(model: SOFA,
     if hasattr(model, f"W"):
         W = pd.DataFrame(model.W[model.views.index(view)], columns = model.Xmdata.mod[view].var_names)
     else:
-        model.W = model.predict("W")
+        model.W = [model.predict(f"W_{i}", num_split=10000) for i in range(len(model.X))]   
         W = pd.DataFrame(model.W[model.views.index(view)], columns = model.Xmdata.mod[view].var_names)
     return W
 
