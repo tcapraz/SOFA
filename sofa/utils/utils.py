@@ -73,7 +73,7 @@ def get_ad(data: pd.DataFrame,
     adata.obs_names = data.index.tolist()
     if log:
         sc.pp.log1p(adata)
-    adata.obsm["mask"] = mask
+    adata.obsm["mask"] = mask.values
 
     if select_hvg:
         adata_filtered = adata[~np.all(data.isna(),axis=1),:]
@@ -97,7 +97,6 @@ def get_ad(data: pd.DataFrame,
     else:
         adata.uns["scaling_factor"] = 0.1
 
-    adata.obsm["mask"] = adata.obsm["mask"].values
     
 
     return adata
