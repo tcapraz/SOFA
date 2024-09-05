@@ -360,7 +360,7 @@ div.rendered_html tbody tr:hover {
 <section id="Analysis-of-multi-omics-data-of-chronic-lymphocytic-leukemia-patients">
 <h1>Analysis of multi-omics data of chronic lymphocytic leukemia patients<a class="headerlink" href="#Analysis-of-multi-omics-data-of-chronic-lymphocytic-leukemia-patients" title="Permalink to this headline"></a></h1>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>%load_ext autoreload
@@ -382,7 +382,7 @@ The autoreload extension is already loaded. To reload it, use:
 <div class="line">Lu, J., Cannizzaro, E., Meier-Abt, F., Scheinost, S., Bruch, P.M., Giles, H.A., Lütge, A., Hüllein, J., Wagner, L., Giacopelli, B. and Nadeu, F., 2021. Multi-omics reveals clinically relevant proliferative drive associated with mTOR-MYC-OXPHOS activity in chronic lymphocytic leukemia. Nature cancer, 2(8), pp.853-864.</div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[44]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[38]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><span></span>import sofa
@@ -390,15 +390,11 @@ The autoreload extension is already loaded. To reload it, use:
 import torch
 import pandas as pd
 import numpy as np
-import scipy.stats as stats
 import matplotlib.pyplot as plt
-from sklearn.decomposition import PCA
-import seaborn as sns
 from sklearn.preprocessing import StandardScaler
-import matplotlib
-#from lifelines import CoxPHFitter
 from muon import MuData
-import anndata as ad
+import warnings
+warnings.filterwarnings(&#39;ignore&#39;)
 
 rna = pd.read_csv(&quot;data/cll_data/rna_data.csv&quot;, index_col=0)
 meth = pd.read_csv(&quot;data/cll_data/meth_data.csv&quot;, index_col=0)
@@ -423,7 +419,7 @@ views = [&quot;mrna&quot;, &quot;methylation&quot;, &quot;drug&quot;]
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[45]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[39]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># get all observation ids that are in all datasets
@@ -433,7 +429,7 @@ len(all_obs)
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[45]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[39]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -442,7 +438,7 @@ len(all_obs)
 </pre></div></div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[46]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[40]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># align observations in all datasets and introduces nan for missing values
@@ -469,7 +465,7 @@ llh = [&quot;gaussian&quot;, &quot;gaussian&quot;, &quot;gaussian&quot;]
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[47]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[41]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># generate input mudata object of omics views
@@ -479,34 +475,25 @@ Xmdata
 </pre></div>
 </div>
 </div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-/home/tuemay/anaconda3/envs/spyder-env/lib/python3.10/site-packages/spfa/utils/utils.py:59: FutureWarning: X.dtype being converted to np.float32 from float64. In the next version of anndata (0.9) conversion will not be automatic. Pass dtype explicitly to avoid this warning. Pass `AnnData(X, dtype=X.dtype, ...)` to get the future behavour.
-  adata = AnnData(encoded_data.reshape(-1,1))
-</pre></div></div>
-</div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[47]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[41]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
 <pre>MuData object with n_obs × n_vars = 217 × 10315
   3 modalities
     mrna:   217 x 5000
-      uns:  &#x27;llh&#x27;
+      uns:  &#x27;llh&#x27;, &#x27;scaling_factor&#x27;
       obsm: &#x27;mask&#x27;
     methylation:    217 x 5000
-      uns:  &#x27;llh&#x27;
+      uns:  &#x27;llh&#x27;, &#x27;scaling_factor&#x27;
       obsm: &#x27;mask&#x27;
     drug:   217 x 315
-      uns:  &#x27;llh&#x27;
+      uns:  &#x27;llh&#x27;, &#x27;scaling_factor&#x27;
       obsm: &#x27;mask&#x27;</pre></div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[48]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[42]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># generate input mudata object of target covariates
@@ -520,49 +507,28 @@ Ymdata
 </pre></div>
 </div>
 </div>
-<div class="nboutput docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-/home/tuemay/anaconda3/envs/spyder-env/lib/python3.10/site-packages/spfa/utils/utils.py:56: FutureWarning: X.dtype being converted to np.float32 from float64. In the next version of anndata (0.9) conversion will not be automatic. Pass dtype explicitly to avoid this warning. Pass `AnnData(X, dtype=X.dtype, ...)` to get the future behavour.
-  encoded_data = data.values
-/home/tuemay/anaconda3/envs/spyder-env/lib/python3.10/site-packages/spfa/utils/utils.py:50: FutureWarning: X.dtype being converted to np.float32 from int64. In the next version of anndata (0.9) conversion will not be automatic. Pass dtype explicitly to avoid this warning. Pass `AnnData(X, dtype=X.dtype, ...)` to get the future behavour.
-  encoded_data = data.values.flatten()
-/home/tuemay/anaconda3/envs/spyder-env/lib/python3.10/site-packages/spfa/utils/utils.py:56: FutureWarning: X.dtype being converted to np.float32 from int64. In the next version of anndata (0.9) conversion will not be automatic. Pass dtype explicitly to avoid this warning. Pass `AnnData(X, dtype=X.dtype, ...)` to get the future behavour.
-  encoded_data = data.values
-/home/tuemay/anaconda3/envs/spyder-env/lib/python3.10/site-packages/spfa/utils/utils.py:50: FutureWarning: X.dtype being converted to np.float32 from int64. In the next version of anndata (0.9) conversion will not be automatic. Pass dtype explicitly to avoid this warning. Pass `AnnData(X, dtype=X.dtype, ...)` to get the future behavour.
-  encoded_data = data.values.flatten()
-/home/tuemay/anaconda3/envs/spyder-env/lib/python3.10/site-packages/spfa/utils/utils.py:56: FutureWarning: X.dtype being converted to np.float32 from int64. In the next version of anndata (0.9) conversion will not be automatic. Pass dtype explicitly to avoid this warning. Pass `AnnData(X, dtype=X.dtype, ...)` to get the future behavour.
-  encoded_data = data.values
-/home/tuemay/anaconda3/envs/spyder-env/lib/python3.10/site-packages/spfa/utils/utils.py:50: FutureWarning: X.dtype being converted to np.float32 from int64. In the next version of anndata (0.9) conversion will not be automatic. Pass dtype explicitly to avoid this warning. Pass `AnnData(X, dtype=X.dtype, ...)` to get the future behavour.
-  encoded_data = data.values.flatten()
-/home/tuemay/anaconda3/envs/spyder-env/lib/python3.10/site-packages/spfa/utils/utils.py:56: FutureWarning: X.dtype being converted to np.float32 from int64. In the next version of anndata (0.9) conversion will not be automatic. Pass dtype explicitly to avoid this warning. Pass `AnnData(X, dtype=X.dtype, ...)` to get the future behavour.
-  encoded_data = data.values
-</pre></div></div>
-</div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[48]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[42]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
 <pre>MuData object with n_obs × n_vars = 217 × 4
   4 modalities
     trisomy12:      217 x 1
-      uns:  &#x27;llh&#x27;, &#x27;label_map&#x27;
+      uns:  &#x27;llh&#x27;, &#x27;scaling_factor&#x27;
       obsm: &#x27;mask&#x27;
     IGHV:   217 x 1
-      uns:  &#x27;llh&#x27;, &#x27;label_map&#x27;
+      uns:  &#x27;llh&#x27;, &#x27;scaling_factor&#x27;
       obsm: &#x27;mask&#x27;
     Age:    217 x 1
-      uns:  &#x27;llh&#x27;
+      uns:  &#x27;llh&#x27;, &#x27;scaling_factor&#x27;
       obsm: &#x27;mask&#x27;
     Sex:    217 x 1
-      uns:  &#x27;llh&#x27;, &#x27;label_map&#x27;
+      uns:  &#x27;llh&#x27;, &#x27;scaling_factor&#x27;
       obsm: &#x27;mask&#x27;</pre></div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[49]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[43]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># collect sample metadata
@@ -572,7 +538,7 @@ metadata = pd.DataFrame(metadata, columns=[&quot;trisomy12&quot;, &quot;IGHV&quo
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[50]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[44]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># generate design matrix with n_covariates x n_factors
@@ -588,7 +554,7 @@ design
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[50]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[44]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -601,7 +567,7 @@ tensor([[1., 0., 0., 0., 0., 0., 0.],
 </div>
 <p>The design matrix specifies which factor should be guided by which covariates. In our case the first 4 factors are each guided by the 4 entries in Ymdata (IGHV, trisomy12, Age, Sex).</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[51]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[45]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>model = sofa.SOFA(Xmdata=Xmdata,
@@ -611,8 +577,7 @@ tensor([[1., 0., 0., 0., 0., 0., 0.],
             device=torch.device(&#39;cpu&#39;),
             horseshoe = True,
             metadata= metadata,
-            subsample=0,
-            target_scale=[100 for  i in range(len(Ymdata.mod))])
+            subsample=0)
 <br/></pre></div>
 </div>
 </div>
@@ -627,7 +592,7 @@ tensor([[1., 0., 0., 0., 0., 0., 0.],
 <li><p>target_scale: crucial hyperparameter to scale how strong factors are guided by target covariates. Too high scaling parameters can lead to overfitting (Factors don’t explain variance of Xmdata, but perfectly predict Ymdata). Too low values can lead to the model ignoring the covariate guidance.</p></li>
 </ul>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[52]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[46]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># fit and plot loss
@@ -641,16 +606,16 @@ plt.semilogy(model.history)
 </div>
 <div class="output_area stderr docutils container">
 <div class="highlight"><pre>
-  0%|          | 0/3500 [00:00&lt;?, ?it/s]Current Elbo 3.01E+06 | Delta: 5175: 100%|██████████| 3500/3500 [09:16&lt;00:00,  6.29it/s]
+  0%|          | 0/3500 [00:00&lt;?, ?it/s]Current Elbo 3.16E+06 | Delta: -2628: 100%|██████████| 3500/3500 [13:44&lt;00:00,  4.24it/s]
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[52]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[46]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-[&lt;matplotlib.lines.Line2D at 0x7f6832280d90&gt;]
+[&lt;matplotlib.lines.Line2D at 0x7f58243bc4d0&gt;]
 </pre></div></div>
 </div>
 <div class="nboutput nblast docutils container">
@@ -661,7 +626,7 @@ plt.semilogy(model.history)
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[53]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[48]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># plot fraction of variance explained of each view by each factor
@@ -671,17 +636,17 @@ sofa.pl.plot_variance_explained(model)
 sofa.pl.plot_factor_covariate_cor(model, metavar=[&quot;trisomy12&quot;, &quot;IGHV&quot;, &quot;Age&quot;, &quot;Sex&quot;])
 
 # plot top weights of factor 1 in view 1
-sofa.pl.plot_top_weights(model, view=0, factor=0)
+sofa.pl.plot_top_loadings(model, view=&quot;mrna&quot;, factor=0)
 </pre></div>
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[53]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[48]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
-&lt;AxesSubplot:xlabel=&#39;Loadings&#39;, ylabel=&#39;Features&#39;&gt;
+&lt;Axes: xlabel=&#39;Loadings&#39;, ylabel=&#39;Features&#39;&gt;
 </pre></div></div>
 </div>
 <div class="nboutput docutils container">
@@ -706,12 +671,12 @@ sofa.pl.plot_top_weights(model, view=0, factor=0)
 </div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[43]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[49]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># to access weights and factors directly use attributes Z and W:
-Z = model.Z
-W = model.W
+Z = sofa.tl.get_Z(model)
+W = sofa.tl.get_W(model, view=&quot;mrna&quot;)
 <br/></pre></div>
 </div>
 </div>
