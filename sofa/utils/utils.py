@@ -20,7 +20,7 @@ def get_ad(data: pd.DataFrame,
            select_hvg: bool=False, 
            log: bool=False, 
            scale: bool=False, 
-           scaling_factor: Union[None, float]=None
+           scaling_factor: float=0.1
            ) -> AnnData:
     """
     Convert a numpy array to an AnnData object.
@@ -41,6 +41,10 @@ def get_ad(data: pd.DataFrame,
         whether to center and scale the data.
     scaling_factor: float, optional
         The scaling factor to scale the likelihood for this view. 
+        It is a crucial hyperparameter. Too high scaling parameters can lead to overfitting 
+        (Factors don't explain variance of Xmdata, but perfectly predict Ymdata). 
+        Too low values can lead to the model ignoring the covariate guidance. In practice
+        a value of 0.1 is a good starting point. Default is 0.1.
     Returns:
     --------
     adata : AnnData
@@ -92,10 +96,8 @@ def get_ad(data: pd.DataFrame,
     adata.X[adata.obsm["mask"] == False] = 0
     adata.uns["llh"] = llh
     
-    if scaling_factor is not None:
-        adata.uns["scaling_factor"] = scaling_factor
-    else:
-        adata.uns["scaling_factor"] = 0.1
+    
+    adata.uns["scaling_factor"] = scaling_factor
 
     
 
@@ -425,13 +427,11 @@ def load_model(file_prefix):
     if "target_mod" in list(mdata.uns.keys()):
         Ymdata = MuData({i:mdata.mod[i] for i in mdata.uns["target_mod"]})
         Xmdata = MuData({i:mdata.mod[i] for i in mdata.mod if i not in mdata.uns["target_mod"]})
-        target_scale = mdata.uns["target_scale"]
         design = mdata.uns["input_design"]
     else:
         Xmdata = MuData({i:mdata.mod[i] for i in mdata.mod})
         Ymdata = None
         design = np.array(0)
-        target_scale= None
     num_factors = mdata.uns["input_num_factors"]
     # TODO find way to save and load mixed column metadata
     #metadata = mdata.uns["metadata"]
@@ -445,7 +445,6 @@ def load_model(file_prefix):
                   device=torch.device('cuda'),
                   horseshoe=horseshoe,
                   subsample=0,
-                  target_scale=target_scale,
                   seed=seed)
     model.Z = mdata.uns["Z"]
     W = [mdata.uns[f"W_{i}"] for i in Xmdata.mod]

@@ -45,8 +45,6 @@ class SOFA:
             Number of samples to use for each minibatch. The default is 0 (use all samples).
         metadata : pandas.DataFrame, optional
             Dataframe with sample metadata. The default is None.
-        guide_scale : list of float, optional
-            Scaling factor for guide likelihood. The default is None.
         verbose : bool, optional
             Whether to print fitting progress. The default is True.
         horseshoe_scale_feature : float, optional
@@ -636,7 +634,7 @@ class SOFA:
         if self.Y is not None and self.Ymdata is not None:
             mdata.uns["guide_mod"] = list(self.Ymdata.mod.keys())
             mdata.uns["input_design"] = self.design.cpu().numpy()
-            mdata.uns["guide_scale"] = self.relative_guide_scale
+            mdata.uns["scaling_factor"] = self.relative_guide_scale
 
 
         else:
