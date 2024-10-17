@@ -435,21 +435,28 @@ def load_model(file_prefix):
     num_factors = mdata.uns["input_num_factors"]
     # TODO find way to save and load mixed column metadata
     #metadata = mdata.uns["metadata"]
-    horseshoe = mdata.uns["horseshoe"]
 
-    seed = mdata.uns["seed"]
+    horseshoe = mdata.uns["horseshoe"]
+    # apparently mu.read does not read None type in uns so 
+    # need to check if seed is there, if not set to None
+    if "seed" not in mdata.uns:
+        seed = None
+    else:
+        seed = mdata.uns["seed"]
+        pyro.set_rng_seed(seed)
+    device = mdata.uns["device"]
     model = SOFA(Xmdata, 
                   num_factors=num_factors, 
                   Ymdata = Ymdata,
                   design = torch.tensor(design),
-                  device=torch.device('cuda'),
+                  device=device,
                   horseshoe=horseshoe,
                   subsample=0,
                   seed=seed)
     model.Z = mdata.uns["Z"]
-    W = [mdata.uns[f"W_{i}"] for i in Xmdata.mod]
+    W = [mdata.uns[f"W_{i}"] for i in model.views]
     model.W = W
-    model.X_pred =[mdata.uns[f"X_{i}"] for i in range(len(Xmdata.mod))]
+    model.X_pred =[mdata.uns[f"X_{i}"] for i in model.views]
     model.history = mdata.uns["history"]
     
     # load pyro paramstore

@@ -200,10 +200,13 @@ def test_save_model(sample_model):
     # Add more test cases...
 
 # Test load_model function
-#def test_load_model():
+def test_load_model(sample_model):
     # Test case 1: model with default parameters
-    #file_prefix = 'model'
-    #model = load_model(file_prefix)
-    #assert isinstance(model, SOFA)
+    file_prefix = 'model'
+    model = sample_model
+    h5mu_file, save_file = save_model(model, file_prefix)
+    model = load_model(file_prefix)
+    assert isinstance(model, SOFA)
+
     # Add assertions for the loaded model
 

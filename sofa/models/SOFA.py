@@ -625,12 +625,14 @@ class SOFA:
         mdata = MuData(datadict)
         mdata.uns["Z"] = self.Z
         
-        for i,m in enumerate(self.Xmdata.mod):
-            mdata.uns[f"W_{m}"] = self.W[i]
-            mdata.uns[f"X_{i}"] = self.X_pred[i]
+        for m in self.Xmdata.mod:
+            mdata.uns[f"W_{m}"] = self.W[self.views.index(m)]
+            mdata.uns[f"X_{m}"] = self.X_pred[self.views.index(m)]
 
         mdata.uns["history"] = self.history
         mdata.uns["seed"] = self.seed
+        mdata.uns["device"] = self.device
+
         if self.Y is not None and self.Ymdata is not None:
             mdata.uns["guide_mod"] = list(self.Ymdata.mod.keys())
             mdata.uns["input_design"] = self.design.cpu().numpy()
