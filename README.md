@@ -5,7 +5,7 @@
 
 # Introduction
 
-Here we present semi-supervised probabilistic Factor Analysis (SOFA), a multi-omics integration method, which infers a set of low dimensional latent factors that represent the main sources of variability. SOFA enables the discovery of primary sources of variation while adjusting for known covariates and simultaneously disentangling variation that is shared between multiple omics modalities and specific to single modalities. The SOFA method is implemented in python using the Pyro framework for probabilistic programming.
+Here we present Semi-supervised Omics Factor Analysis (SOFA), a multi-omics integration method, that incorporates known sources of variation into the model and focuses the latent factor discovery on novel sources of variation. The SOFA method is implemented in Python using the Pyro framework for probabilistic programming.
 
 
 # Installation
