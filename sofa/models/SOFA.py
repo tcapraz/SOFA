@@ -35,8 +35,8 @@ class SOFA:
             guide data. The default is None.
         design : torch.Tensor, optional
             Design matrix for supervised factors. The default is None.
-        device : torch.device, optional
-            Device to fit the model ("cuda" or "cpu"). The default is torch.device('cpu').
+        device : str, optional
+            Device to fit the model ("cuda" or "cpu"). The default is 'cpu'.
         horseshoe : bool, optional
             Whether to use horseshoe priors on the loadings. The default is True.
         update_freq : int, optional
@@ -631,7 +631,13 @@ class SOFA:
 
         mdata.uns["history"] = self.history
         mdata.uns["seed"] = self.seed
-        mdata.uns["device"] = self.device
+        # need to check whether device is a string or a torch.device
+        # default is str, as torch.device can't be saved by write method
+        # of MuData. Keep index of GPU if provided via __str__().
+        if isinstance(mdata.uns["device"], str):
+            mdata.uns["device"] = self.device
+        elif isinstance(mdata.uns["device"], torch.device):
+            mdata.uns["device"] = self.device.__str__()
 
         if self.Y is not None and self.Ymdata is not None:
             mdata.uns["guide_mod"] = list(self.Ymdata.mod.keys())
