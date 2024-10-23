@@ -634,9 +634,9 @@ class SOFA:
         # need to check whether device is a string or a torch.device
         # default is str, as torch.device can't be saved by write method
         # of MuData. Keep index of GPU if provided via __str__().
-        if isinstance(mdata.uns["device"], str):
+        if isinstance(self.device, str):
             mdata.uns["device"] = self.device
-        elif isinstance(mdata.uns["device"], torch.device):
+        elif isinstance(self.device, torch.device):
             mdata.uns["device"] = self.device.__str__()
 
         if self.Y is not None and self.Ymdata is not None:
