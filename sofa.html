@@ -115,7 +115,7 @@
 <li><p><strong>num_factors</strong> (<em>int</em>) – Number of latent factors.</p></li>
 <li><p><strong>Ymdata</strong> (<em>MuData</em><em>, </em><em>optional</em>) – guide data. The default is None.</p></li>
 <li><p><strong>design</strong> (<em>torch.Tensor</em><em>, </em><em>optional</em>) – Design matrix for supervised factors. The default is None.</p></li>
-<li><p><strong>device</strong> (<em>torch.device</em><em>, </em><em>optional</em>) – Device to fit the model (“cuda” or “cpu”). The default is torch.device(‘cpu’).</p></li>
+<li><p><strong>device</strong> (<em>str</em><em>, </em><em>optional</em>) – Device to fit the model (“cuda” or “cpu”). The default is ‘cpu’.</p></li>
 <li><p><strong>horseshoe</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether to use horseshoe priors on the loadings. The default is True.</p></li>
 <li><p><strong>update_freq</strong> (<em>int</em><em>, </em><em>optional</em>) – Frequency of steps before ELBO is displayed during training. The default is 200.</p></li>
 <li><p><strong>subsample</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of samples to use for each minibatch. The default is 0 (use all samples).</p></li>
