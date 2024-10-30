@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
 import scipy.stats as stats
-from ..utils.utils import calc_var_explained,  get_gsea_enrichment, get_W, get_var_explained_per_view_factor
+from ..utils.utils import calc_var_explained,  get_gsea_enrichment, get_loadings, get_var_explained_per_view_factor
 import pandas as pd
 import numpy as np
 from matplotlib.axes import Axes 
@@ -250,9 +250,9 @@ def plot_variance_explained_view(model: SOFA,
     ax.set_xticks(ticks = range(len(model.views)), labels= model.views,rotation=90)
     return ax
 
-def plot_factor_covariate_cor(
+def plot_factor_metadata_cor(
         model: SOFA,
-        metavar: List[int],
+        metadata: pd.DataFrame,
         ax: Union[None,Axes]=None
         ) -> Axes:
     """
@@ -262,8 +262,8 @@ def plot_factor_covariate_cor(
     ----------
     model : SOFA
         The trained SOFA model.
-    metavar : list of str
-        The list of covariate names to plot
+    metavar : pandas.DataFrame
+        A dataframe with the covariates.
     ax : matplotlib Axes object, optional
         The axes to plot on. If None, a new figure is created.
     Returns
@@ -274,9 +274,9 @@ def plot_factor_covariate_cor(
     cor = []
     if not hasattr(model, "Z"):
         model.Z = model.predict("Z", num_split=10000)
-    for i in metavar:
-        var = model.metadata[i].values
-        mask = ~model.metadata[i].isna()
+    for i in range(metadata.shape[1]):
+        var = metadata.iloc[:,i].values
+        mask = ~metadata.iloc[:,i].isna()
         if var.dtype.type is np.string_ or var.dtype.type is np.object_ or var.dtype.type is pd.core.dtypes.dtypes.CategoricalDtypeType:
             lmap = {l:j for j,l in enumerate(np.unique(var[mask]))}
             y = np.array([lmap[l] for l in var[mask]])
@@ -299,7 +299,7 @@ def plot_factor_covariate_cor(
         fig, ax = plt.subplots()
     plot = ax.imshow(cormat, cmap="RdBu", origin="lower", norm=divnorm)
     ax.set_xlabel("Covariate")
-    ax.set_xticks(ticks = range(len(metavar)), labels= metavar, rotation=90)
+    ax.set_xticks(ticks = range(metadata.shape[1]), labels= metadata.columns, rotation=90)
     ax.set_yticks(ticks = range(cormat.shape[0]), labels= y_labels)
     ax.set_ylabel("Factor")
     plt.colorbar(plot)

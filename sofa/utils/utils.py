@@ -187,7 +187,7 @@ def calc_var_explained_(X_pred, X):
 
 
 
-def get_W(model: SOFA,
+def get_loadings(model: SOFA,
           view: str
           )-> pd.DataFrame:
     """
@@ -212,7 +212,7 @@ def get_W(model: SOFA,
         W = pd.DataFrame(model.W[model.views.index(view)], columns = model.Xmdata.mod[view].var_names)
     return W
 
-def get_Z(model: SOFA,
+def get_factors(model: SOFA,
           )-> pd.DataFrame:
     """
     Get the loadings of the model for a specific view.
@@ -424,9 +424,9 @@ def load_model(file_prefix):
         The loaded SOFA model.
     """
     mdata = mu.read(file_prefix +".h5mu")
-    if "target_mod" in list(mdata.uns.keys()):
-        Ymdata = MuData({i:mdata.mod[i] for i in mdata.uns["target_mod"]})
-        Xmdata = MuData({i:mdata.mod[i] for i in mdata.mod if i not in mdata.uns["target_mod"]})
+    if "guide_mod" in list(mdata.uns.keys()):
+        Ymdata = MuData({i:mdata.mod[i] for i in mdata.uns["guide_mod"]})
+        Xmdata = MuData({i:mdata.mod[i] for i in mdata.mod if i not in mdata.uns["guide_mod"]})
         design = mdata.uns["input_design"]
     else:
         Xmdata = MuData({i:mdata.mod[i] for i in mdata.mod})
