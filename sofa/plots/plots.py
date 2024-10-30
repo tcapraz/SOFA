@@ -41,7 +41,7 @@ def plot_loadings(
     
     if not hasattr(model, f"W"):
         model.W = [model.predict(f"W_{i}", num_split=10000) for i in range(len(model.X))] 
-    W = get_W(model, view)
+    W = get_loadings(model, view)
     W = W.loc[factor, :]
     W_sorted = W.sort_values()
     labels = np.array(W_sorted.index.tolist())
@@ -91,7 +91,7 @@ def plot_top_loadings(
     if not hasattr(model, f"W"):
         model.W = [model.predict(f"W_{i}", num_split=10000) for i in range(len(model.X))]
         
-    W = get_W(model, view)
+    W = get_loadings(model, view)
     W = W.loc[factor,:]
 
     if sign ==None:

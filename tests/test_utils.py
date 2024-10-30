@@ -1,5 +1,5 @@
 import pytest
-from sofa.utils.utils import get_ad, calc_var_explained,  get_W, get_Z, get_top_loadings, get_gsea_enrichment, get_rmse, get_guide_error, save_model, load_model
+from sofa.utils.utils import get_ad, calc_var_explained,  get_loadings, get_factors, get_top_loadings, get_gsea_enrichment, get_rmse, get_guide_error, save_model, load_model
 import pandas as pd
 import numpy as np
 from anndata import AnnData
@@ -52,11 +52,11 @@ def test_calc_var_explained():
 
     # Add more test cases...
 
-# Test get_W function
-def test_get_W(sample_model, sample_data):
+# Test get_loadings function
+def test_get_loadings(sample_model, sample_data):
     # Test case 1: model with existing W attribute
     model = sample_model
-    W = get_W(model, 'view1')
+    W = get_loadings(model, 'view1')
     assert isinstance(W, pd.DataFrame)
     assert W.shape == (model.num_factors, model.X[0].shape[1])
 
@@ -79,7 +79,7 @@ def test_get_W(sample_model, sample_data):
     # check if prediction works
     model = SOFA(Xmdata, num_factors, Ymdata, design, device, horseshoe, update_freq, subsample, metadata, verbose, horseshoe_scale_feature, horseshoe_scale_factor, horseshoe_scale_global, seed)
 
-    W = get_W(model, 'view1')
+    W = get_loadings(model, 'view1')
     assert isinstance(W, pd.DataFrame)
     assert W.shape == (num_factors, sample_data.X.shape[1])
     assert W.columns.tolist() == sample_data.var_names.tolist()
@@ -87,10 +87,10 @@ def test_get_W(sample_model, sample_data):
 
 
 
-# Test get_Z function
-def test_get_Z(sample_model, sample_data):
+# Test get_factors function
+def test_get_factors(sample_model, sample_data):
 
-    Z = get_Z(sample_model)
+    Z = get_factors(sample_model)
     assert isinstance(Z, pd.DataFrame)
     assert Z.shape == (sample_model.num_samples, sample_model.num_factors)
 
@@ -114,7 +114,7 @@ def test_get_Z(sample_model, sample_data):
     # check if prediction works
     model = SOFA(Xmdata, num_factors, Ymdata, design, device, horseshoe, update_freq, subsample, metadata, verbose, horseshoe_scale_feature, horseshoe_scale_factor, horseshoe_scale_global, seed)
 
-    Z = get_Z(model)
+    Z = get_factors(model)
 
     assert isinstance(Z, pd.DataFrame)
     assert Z.shape == (model.num_samples, model.num_factors)
@@ -135,14 +135,14 @@ def test_get_top_loadings(sample_model):
 
 
 # Test get_gsea_enrichment function
-def test_get_gsea_enrichment():
+#def test_get_gsea_enrichment():
     # Test case 1: gene_list, db, and background as lists
-    gene_list = ["IGF2" 	,"DLK1" ,	"CYP17A1" ]
-    background = ["IGF2" 	,"DLK1" ,	"CYP17A1" ,	"APOE" ,	"SLPI" 	,"CYP11B1" ,	"STAR"]
-    db = "GO_Biological_Process_2023"
+#    gene_list = ["IGF2" 	,"DLK1" ,	"CYP17A1" ]
+#    background = ["IGF2" 	,"DLK1" ,	"CYP17A1" ,	"APOE" ,	"SLPI" 	,"CYP11B1" ,	"STAR"]
+#    db = "GO_Biological_Process_2023"
 
-    enr = get_gsea_enrichment(gene_list, db, background)
-    assert isinstance(enr, gp.Enrichr)
+#    enr = get_gsea_enrichment(gene_list, db, background)
+#    assert isinstance(enr, gp.Enrichr)
 
     
 

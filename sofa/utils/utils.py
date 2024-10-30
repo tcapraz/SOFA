@@ -263,7 +263,7 @@ def get_top_loadings(model,view, factor=0, sign="+", top_n=100):
         DataFrame containing the top_n loadings of the model for the specified view.
     """
     assert(sign=="+" or sign=="-")
-    W = get_W(model, view)
+    W = get_loadings(model, view)
     W = W.loc[factor,:]
     if sign == "+":
         idx = np.argpartition(W, -top_n)[-top_n:]
