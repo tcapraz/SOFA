@@ -167,43 +167,6 @@ that is explained by each factor.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="sofa.utils.utils.get_W">
-<span class="sig-prename descclassname"><span class="pre">sofa.utils.utils.</span></span><span class="sig-name descname"><span class="pre">get_W</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="sofa.html#sofa.models.SOFA.SOFA" title="sofa.models.SOFA.SOFA"><span class="pre">sofa.models.SOFA.SOFA</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">view</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.frame.DataFrame</span></span></span><a class="headerlink" href="#sofa.utils.utils.get_W" title="Permalink to this definition"></a></dt>
-<dd><p>Get the loadings of the model for a specific view.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>model</strong> (<a class="reference internal" href="sofa.html#sofa.models.SOFA.SOFA" title="sofa.models.SOFA.SOFA"><em>SOFA</em></a>) – The trained SOFA model.</p></li>
-<li><p><strong>view</strong> (<em>str</em>) – Name of the view to get the loadings for.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>DataFrame containing the loadings of the model for the specified view.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>pd.DataFrame</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="sofa.utils.utils.get_Z">
-<span class="sig-prename descclassname"><span class="pre">sofa.utils.utils.</span></span><span class="sig-name descname"><span class="pre">get_Z</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="sofa.html#sofa.models.SOFA.SOFA" title="sofa.models.SOFA.SOFA"><span class="pre">sofa.models.SOFA.SOFA</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.frame.DataFrame</span></span></span><a class="headerlink" href="#sofa.utils.utils.get_Z" title="Permalink to this definition"></a></dt>
-<dd><p>Get the loadings of the model for a specific view.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>model</strong> (<a class="reference internal" href="sofa.html#sofa.models.SOFA.SOFA" title="sofa.models.SOFA.SOFA"><em>SOFA</em></a>) – The trained SOFA model.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>DataFrame containing the loadings of the model for the specified view.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>pd.DataFrame</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="sofa.utils.utils.get_ad">
 <span class="sig-prename descclassname"><span class="pre">sofa.utils.utils.</span></span><span class="sig-name descname"><span class="pre">get_ad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">pandas.core.frame.DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">llh</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">'gaussian'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">select_hvg</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">bool</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scaling_factor</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">float</span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">anndata._core.anndata.AnnData</span></span></span><a class="headerlink" href="#sofa.utils.utils.get_ad" title="Permalink to this definition"></a></dt>
 <dd><p>Convert a numpy array to an AnnData object.</p>
@@ -229,6 +192,23 @@ a value of 0.1 is a good starting point. Default is 0.1.</p>
 </dl>
 <dl class="simple">
 <dt>adata<span class="classifier">AnnData</span></dt><dd><p>The converted AnnData object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sofa.utils.utils.get_factors">
+<span class="sig-prename descclassname"><span class="pre">sofa.utils.utils.</span></span><span class="sig-name descname"><span class="pre">get_factors</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="sofa.html#sofa.models.SOFA.SOFA" title="sofa.models.SOFA.SOFA"><span class="pre">sofa.models.SOFA.SOFA</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.frame.DataFrame</span></span></span><a class="headerlink" href="#sofa.utils.utils.get_factors" title="Permalink to this definition"></a></dt>
+<dd><p>Get the loadings of the model for a specific view.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>model</strong> (<a class="reference internal" href="sofa.html#sofa.models.SOFA.SOFA" title="sofa.models.SOFA.SOFA"><em>SOFA</em></a>) – The trained SOFA model.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>DataFrame containing the loadings of the model for the specified view.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
 </dd>
 </dl>
 </dd></dl>
@@ -269,6 +249,26 @@ categorical cross entropy for categorical Y of the model.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="sofa.utils.utils.get_loadings">
+<span class="sig-prename descclassname"><span class="pre">sofa.utils.utils.</span></span><span class="sig-name descname"><span class="pre">get_loadings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference internal" href="sofa.html#sofa.models.SOFA.SOFA" title="sofa.models.SOFA.SOFA"><span class="pre">sofa.models.SOFA.SOFA</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">view</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">pandas.core.frame.DataFrame</span></span></span><a class="headerlink" href="#sofa.utils.utils.get_loadings" title="Permalink to this definition"></a></dt>
+<dd><p>Get the loadings of the model for a specific view.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> (<a class="reference internal" href="sofa.html#sofa.models.SOFA.SOFA" title="sofa.models.SOFA.SOFA"><em>SOFA</em></a>) – The trained SOFA model.</p></li>
+<li><p><strong>view</strong> (<em>str</em>) – Name of the view to get the loadings for.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>DataFrame containing the loadings of the model for the specified view.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>pd.DataFrame</p>
 </dd>
 </dl>
 </dd></dl>
