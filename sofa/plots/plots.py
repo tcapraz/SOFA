@@ -45,7 +45,7 @@ def plot_loadings(
     factor = factor-1
     
     W = get_loadings(model, view)
-    W = W.loc[factor, :]
+    W = W.iloc[factor, :]
     W_sorted = W.sort_values()
     labels = np.array(W_sorted.index.tolist())
     if len(labels) > 20:
@@ -96,7 +96,7 @@ def plot_top_loadings(
     # correct for pythonic indexing
     factor = factor-1    
     W = get_loadings(model, view)
-    W = W.loc[factor,:]
+    W = W.iloc[factor,:]
 
     if sign ==None:
         idx = np.argpartition(abs(W), -top_n)[-top_n:]

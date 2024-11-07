@@ -275,7 +275,7 @@ def get_top_loadings(model,view, factor, sign="+", top_n=100):
     # correct for pythonic indexing
     factor = factor-1
     W = get_loadings(model, view)
-    W = W.loc[factor,:]
+    W = W.iloc[factor,:]
     if sign == "+":
         idx = np.argpartition(W, -top_n)[-top_n:]
         topW = W.index[idx]
