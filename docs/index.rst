@@ -19,8 +19,8 @@ Welcome to SOFA's documentation!
    :caption: Tutorials:
    
    notebooks/installation
-   notebooks/tcga_data
-   notebooks/cll_data
+   notebooks/depmap_example
+   notebooks/sc_multiome_example
    
 
    
