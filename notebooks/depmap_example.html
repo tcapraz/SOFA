@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Introduction &mdash; spfa 0.1 documentation</title>
+  <title>Analysis of DepMap data &mdash; spfa 0.1 documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -21,7 +21,7 @@
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Introduction" href="sc_multiome_example.html" />
+    <link rel="next" title="Analysis of a single-cell multiome data set" href="sc_multiome_example.html" />
     <link rel="prev" title="Installation" href="installation.html" /> 
 </head>
 
@@ -52,32 +52,33 @@
 <p class="caption" role="heading"><span class="caption-text">Tutorials:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Introduction</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#The-SOFA-model">The SOFA model</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#Interpretation-of-the-factors-(Z)">Interpretation of the factors (Z)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#Interpretation-of-the-loading-weights-(W)">Interpretation of the loading weights (W)</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#Supported-data">Supported data</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Analysis of DepMap data</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#Introduction">Introduction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#The-SOFA-model">The SOFA model</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#Interpretation-of-the-factors-(Z)">Interpretation of the factors (Z)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Interpretation-of-the-loading-weights-(W)">Interpretation of the loading weights (W)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#Supported-data">Supported data</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#The-DepMap-data-set">The DepMap data set</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#The-DepMap-data-set">The DepMap data set</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="#Read-data-and-set-hyperparameters">Read data and set hyperparameters</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#(Optional-for-this-Tutorial)-here-we-will-show-how-you-would-prepare-the-input-data-for-SOFA-yourself">(Optional for this Tutorial) here we will show how you would prepare the input data for SOFA yourself</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Fit-the-SOFA-model">Fit the <code class="docutils literal notranslate"><span class="pre">SOFA</span></code> model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#Downstream-analysis">Downstream analysis</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Convergence">Convergence</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Variance-explained">Variance explained</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Check-factor-guidance">Check factor guidance</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Downstream-analysis-of-the-factor-values">Downstream analysis of the factor values</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Downstream-analysis-of-loading-weights">Downstream analysis of loading weights</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="#Fit-the-SOFAmodel">Fit the <code class="docutils literal notranslate"><span class="pre">SOFA</span></code>model</a></li>
-<li class="toctree-l1"><a class="reference internal" href="#Downstream-analysis">Downstream analysis</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#Convergence">Convergence</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Variance-explained">Variance explained</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Check-factor-guidance">Check factor guidance</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Downstream-analysis-of-the-factor-values">Downstream analysis of the factor values</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#Downstream-analysis-of-loading-weights">Downstream analysis of loading weights</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="sc_multiome_example.html">Introduction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="sc_multiome_example.html#Load-and-preprocess">Load and preprocess</a></li>
-<li class="toctree-l1"><a class="reference internal" href="sc_multiome_example.html#Model">Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sc_multiome_example.html">Analysis of a single-cell multiome data set</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sc_multiome_example.html#Fit-the-SOFA-model">Fit the <code class="docutils literal notranslate"><span class="pre">SOFA</span></code> model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="sc_multiome_example.html#Downstream-analysis">Downstream analysis</a></li>
 </ul>
 
@@ -95,7 +96,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Introduction</li>
+      <li>Analysis of DepMap data</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/notebooks/depmap_example.ipynb.txt" rel="nofollow"> View page source</a>
       </li>
@@ -384,6 +385,7 @@ div.rendered_html tbody tr:hover {
 }
 </style>
 <p><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></p>
+<p>Before you start, make sure to set your runtime type to GPU in colab.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
@@ -397,7 +399,7 @@ div.rendered_html tbody tr:hover {
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
-<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>!wget https://figshare.com/s/d8b7f3621b625932bfb2
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>#!wget
 </pre></div>
 </div>
 </div>
@@ -425,32 +427,34 @@ import torch
 </pre></div>
 </div>
 </div>
+<section id="Analysis-of-DepMap-data">
+<h1>Analysis of DepMap data<a class="headerlink" href="#Analysis-of-DepMap-data" title="Permalink to this headline"></a></h1>
 <section id="Introduction">
-<h1>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this headline"></a></h1>
+<h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this headline"></a></h2>
 <p>In this notebook we will explore how <code class="docutils literal notranslate"><span class="pre">SOFA</span></code> can be used to analyze multi-omics data from the DepMap <a class="reference external" href="#1,#2,#3,#4,#5">[1,2,3,4,5]</a>. Here we give a brief introduction what the SOFA model does and what it can be used for. For a more detailed description please refer to our preprint: <a class="reference external" href="https://doi.org/10.1101/2024.10.10.617527">https://doi.org/10.1101/2024.10.10.617527</a></p>
 <section id="The-SOFA-model">
-<h2>The SOFA model<a class="headerlink" href="#The-SOFA-model" title="Permalink to this headline"></a></h2>
+<h3>The SOFA model<a class="headerlink" href="#The-SOFA-model" title="Permalink to this headline"></a></h3>
 <p>Given a set of real-valued data matrices containing multi-omic measurements from overlapping samples (also called views), along with sample-level guiding variables that capture additional properties such as batches or mutational profiles, SOFA extracts an interpretable lower-dimensional data representation, consisting of a shared factor matrix and modality-specific loading matrices. The goal of these factors is to explain the major axes of variation in the data. SOFA explicitly assigns a subset
 of factors to explain both the multi-omics data and the guiding variables (guided factors), while preserving another subset of factors exclusively for explaining the multi-omics data (unguided factors). Importantly, this feature allows the analyst to discern variation that is driven by known sources from novel, unexplained sources of variability.</p>
 <section id="Interpretation-of-the-factors-(Z)">
-<h3>Interpretation of the factors (Z)<a class="headerlink" href="#Interpretation-of-the-factors-(Z)" title="Permalink to this headline"></a></h3>
+<h4>Interpretation of the factors (Z)<a class="headerlink" href="#Interpretation-of-the-factors-(Z)" title="Permalink to this headline"></a></h4>
 <p>Analogous to the interpretation of factors in PCA, SOFA factors ordinate samples along a zero-centered axis, where samples with opposing signs exhibit contrasting phenotypes along the inferred axis of variation, and the absolute value of the factor indicates the strength of the phenotype. Importantly, SOFA partitions the factors of the low-rank decomposition into guided and unguided factors: the guided factors are linked to specific guiding variables, while the unguided factors capture global,
 yet unexplained, sources of variability in the data. The factor values can be used in downstream analysis tasks related to the samples, such as clustering or survival analysis. The factor values are called Z in SOFA.</p>
 </section>
 <section id="Interpretation-of-the-loading-weights-(W)">
-<h3>Interpretation of the loading weights (W)<a class="headerlink" href="#Interpretation-of-the-loading-weights-(W)" title="Permalink to this headline"></a></h3>
+<h4>Interpretation of the loading weights (W)<a class="headerlink" href="#Interpretation-of-the-loading-weights-(W)" title="Permalink to this headline"></a></h4>
 <p>SOFA’s loading weights indicate the importance of each feature for its respective factor, thereby enabling the interpretation of SOFA factors. Loading weights close to zero indicate that a feature has little to no importance for the respective factor, while large magnitudes suggest strong relevance. The sign of the loading weight aligns with its corresponding factor, meaning that positive loading weights indicate higher feature levels in samples with positive factor values, and negative loading
 weights indicate higher feature levels in samples with negative factor values. The top loading weights can be simply inspected or used in downstream analysis such as gene set enrichment analysis. The factor values are called W in SOFA.</p>
 </section>
 <section id="Supported-data">
-<h3>Supported data<a class="headerlink" href="#Supported-data" title="Permalink to this headline"></a></h3>
+<h4>Supported data<a class="headerlink" href="#Supported-data" title="Permalink to this headline"></a></h4>
 <p>SOFA expects a set of matrices containing omics measurements with matching and aligned samples and different features. Currently SOFA only supports Gaussian likelihoods, for the multi-omics data. Data should therefore be appropriately normalized according to its omics modality. Additionally, data should be centered and scaled.</p>
 <p>For the guiding variables SOFA supports Gaussian, Bernoulli and Categorical likelihoods. Guiding variables can therefore be continuous, binary or categorical. Guiding variables should be vectors with matching samples with the multi-omics data.</p>
 <p>In SOFA the multi-omics data is denoted as X and the guiding variables as Y.</p>
 </section>
 </section>
 <section id="The-DepMap-data-set">
-<h2>The DepMap data set<a class="headerlink" href="#The-DepMap-data-set" title="Permalink to this headline"></a></h2>
+<h3>The DepMap data set<a class="headerlink" href="#The-DepMap-data-set" title="Permalink to this headline"></a></h3>
 <p>The DepMap project aims to identify cancer vulnerabilities and drug targets across a diverse range of cancer types. The data set includes multi-omics data, encompassing transcriptomics<a class="reference external" href="#4">[4]</a>, proteomics<a class="reference external" href="#1">[1]</a>, and methylation<a class="reference external" href="#5">[5]</a>, as well as drug response profiles for 627 drugs<a class="reference external" href="#5">[5]</a> and CRISPR-Cas9 gene essentiality scores<a class="reference external" href="#2,#3">[2,3]</a> for 17485 genes for 949 cancer cell lines across 26 different tissues. We will fit a SOFA model with 20 factors, while
 accounting for potential/known drivers of variation such as growth rate, microsatellite instability (MSI) status, BRAF, TP53 and PIK3CA mutation and hematopoietic lineage. We will use the essentiality score data test factor associations with essentiality scores. We will first load the preprocessed data in <code class="docutils literal notranslate"><span class="pre">MuData</span></code> format, fit a SOFA model and perform various downstream analyses.</p>
 <div class="line-block">
@@ -460,6 +464,7 @@ accounting for potential/known drivers of variation such as growth rate, microsa
 <div class="line">[4] Garcia-Alonso, L. et al. Transcription factor activities enhance markers of drug sensitivity in cancer. Cancer Res. 78, 769–780 (2018).</div>
 <div class="line">[5] Iorio, F. et al. A landscape of pharmacogenomic interactions in cancer. Cell 166, 740–754 (2016).</div>
 </div>
+</section>
 </section>
 </section>
 <section id="Read-data-and-set-hyperparameters">
@@ -532,8 +537,6 @@ Ymdata = MuData({&quot;Growth&quot;:mdata[&quot;Growth&quot;], &quot;MSI&quot;: 
 </pre></div>
 </div>
 </div>
-<section id="(Optional-for-this-Tutorial)-here-we-will-show-how-you-would-prepare-the-input-data-for-SOFA-yourself">
-<h2>(Optional for this Tutorial) here we will show how you would prepare the input data for SOFA yourself<a class="headerlink" href="#(Optional-for-this-Tutorial)-here-we-will-show-how-you-would-prepare-the-input-data-for-SOFA-yourself" title="Permalink to this headline"></a></h2>
 <p>We assume that you have a <code class="docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code> for each of the data modalities.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
@@ -634,10 +637,8 @@ tensor([[1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
          0., 0.]], dtype=torch.float64)
 </pre></div></div>
 </div>
-</section>
-</section>
-<section id="Fit-the-SOFAmodel">
-<h1>Fit the <code class="docutils literal notranslate"><span class="pre">SOFA</span></code>model<a class="headerlink" href="#Fit-the-SOFAmodel" title="Permalink to this headline"></a></h1>
+<section id="Fit-the-SOFA-model">
+<h2>Fit the <code class="docutils literal notranslate"><span class="pre">SOFA</span></code> model<a class="headerlink" href="#Fit-the-SOFA-model" title="Permalink to this headline"></a></h2>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
 </pre></div>
@@ -646,7 +647,7 @@ tensor([[1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
                   num_factors=num_factors, # number of factors to infer
                   Ymdata = Ymdata, # the input guiding variables
                   design = design, # design matrix relating factors to guiding variables
-                  device=&#39;cuda&#39;, # set device to &quot;cuda&quot; to enable computation on the GPU
+                  device=&#39;cuda&#39;, # set device to &quot;cuda&quot; to enable computation on the GPU, if you don&#39;t have a GPU available set it to &quot;cpu&quot;
                   seed=42) # set seed to get the same results every time we run it
 </pre></div>
 </div>
@@ -685,9 +686,9 @@ model = sofa.tl.load_model(&quot;depmap_example_model&quot;)
 </div>
 </section>
 <section id="Downstream-analysis">
-<h1>Downstream analysis<a class="headerlink" href="#Downstream-analysis" title="Permalink to this headline"></a></h1>
+<h2>Downstream analysis<a class="headerlink" href="#Downstream-analysis" title="Permalink to this headline"></a></h2>
 <section id="Convergence">
-<h2>Convergence<a class="headerlink" href="#Convergence" title="Permalink to this headline"></a></h2>
+<h3>Convergence<a class="headerlink" href="#Convergence" title="Permalink to this headline"></a></h3>
 <p>We will first assess whether the ELBO loss of SOFA has converged by plotting it over training steps</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
@@ -712,12 +713,12 @@ Text(0, 0.5, &#39;ELBO&#39;)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_depmap_example_23_1.png" src="../_images/notebooks_depmap_example_23_1.png" />
+<img alt="../_images/notebooks_depmap_example_24_1.png" src="../_images/notebooks_depmap_example_24_1.png" />
 </div>
 </div>
 </section>
 <section id="Variance-explained">
-<h2>Variance explained<a class="headerlink" href="#Variance-explained" title="Permalink to this headline"></a></h2>
+<h3>Variance explained<a class="headerlink" href="#Variance-explained" title="Permalink to this headline"></a></h3>
 <p>A good first step in a SOFA analysis is to plot how much variance is explained by each factor for each modality. This gives us an overview which factors are active across multiple modalities, capturing correlated variation across multiple measurements and which are private to a single modality, most probably capturing technical effects related to this modality.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
@@ -740,7 +741,7 @@ Text(0, 0.5, &#39;ELBO&#39;)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_depmap_example_25_1.png" src="../_images/notebooks_depmap_example_25_1.png" />
+<img alt="../_images/notebooks_depmap_example_26_1.png" src="../_images/notebooks_depmap_example_26_1.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
@@ -765,7 +766,7 @@ sofa.pl.plot_variance_explained_view(model)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_depmap_example_26_1.png" src="../_images/notebooks_depmap_example_26_1.png" />
+<img alt="../_images/notebooks_depmap_example_27_1.png" src="../_images/notebooks_depmap_example_27_1.png" />
 </div>
 </div>
 <div class="nbinput docutils container">
@@ -790,12 +791,12 @@ sofa.pl.plot_variance_explained_factor(model)
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_depmap_example_27_1.png" src="../_images/notebooks_depmap_example_27_1.png" />
+<img alt="../_images/notebooks_depmap_example_28_1.png" src="../_images/notebooks_depmap_example_28_1.png" />
 </div>
 </div>
 </section>
 <section id="Check-factor-guidance">
-<h2>Check factor guidance<a class="headerlink" href="#Check-factor-guidance" title="Permalink to this headline"></a></h2>
+<h3>Check factor guidance<a class="headerlink" href="#Check-factor-guidance" title="Permalink to this headline"></a></h3>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
 </pre></div>
@@ -827,13 +828,13 @@ sofa.pl.plot_factor_metadata_cor(model, metadata[[&quot;growth&quot;, &quot;msi_
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_depmap_example_30_1.png" src="../_images/notebooks_depmap_example_30_1.png" />
+<img alt="../_images/notebooks_depmap_example_31_1.png" src="../_images/notebooks_depmap_example_31_1.png" />
 </div>
 </div>
 <p>As expected the guided factors a correlated with their respective guiding variables. The unguided factors are not correlated with the guiding variables.</p>
 </section>
 <section id="Downstream-analysis-of-the-factor-values">
-<h2>Downstream analysis of the factor values<a class="headerlink" href="#Downstream-analysis-of-the-factor-values" title="Permalink to this headline"></a></h2>
+<h3>Downstream analysis of the factor values<a class="headerlink" href="#Downstream-analysis-of-the-factor-values" title="Permalink to this headline"></a></h3>
 <p>The factor values represent the new coordinates in lower dimensional space of our samples and have dimensions samples x factors. The factor values called Z in SOFA. We can use the factor values for all kinds of downstream analyses on the sample level. Here we will cluster the unguided factors.</p>
 <p>We first retrieve the factor values:</p>
 <div class="nbinput docutils container">
@@ -1196,12 +1197,12 @@ ax.legend(frameon=False, ncols=2, loc=&quot;center left&quot;,bbox_to_anchor=(1,
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_depmap_example_36_1.png" src="../_images/notebooks_depmap_example_36_1.png" />
+<img alt="../_images/notebooks_depmap_example_37_1.png" src="../_images/notebooks_depmap_example_37_1.png" />
 </div>
 </div>
 </section>
 <section id="Downstream-analysis-of-loading-weights">
-<h2>Downstream analysis of loading weights<a class="headerlink" href="#Downstream-analysis-of-loading-weights" title="Permalink to this headline"></a></h2>
+<h3>Downstream analysis of loading weights<a class="headerlink" href="#Downstream-analysis-of-loading-weights" title="Permalink to this headline"></a></h3>
 <p>The loadings capture the importance of the features in each omics modality for each factor, they have dimensions: factors x features. To retrieve the loadings run:</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
@@ -1772,7 +1773,7 @@ sofa.pl.plot_enrichment(top_loadings, # the top features
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_depmap_example_39_1.png" src="../_images/notebooks_depmap_example_39_1.png" />
+<img alt="../_images/notebooks_depmap_example_40_1.png" src="../_images/notebooks_depmap_example_40_1.png" />
 </div>
 </div>
 <div class="line-block">
@@ -1800,9 +1801,10 @@ sofa.pl.plot_enrichment(top_loadings, # the top features
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_depmap_example_41_1.png" src="../_images/notebooks_depmap_example_41_1.png" />
+<img alt="../_images/notebooks_depmap_example_42_1.png" src="../_images/notebooks_depmap_example_42_1.png" />
 </div>
 </div>
+</section>
 </section>
 </section>
 
@@ -1811,7 +1813,7 @@ sofa.pl.plot_enrichment(top_loadings, # the top features
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="sc_multiome_example.html" class="btn btn-neutral float-right" title="Introduction" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="sc_multiome_example.html" class="btn btn-neutral float-right" title="Analysis of a single-cell multiome data set" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
