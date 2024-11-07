@@ -20,7 +20,7 @@ from ..models.SOFA import SOFA
 def plot_loadings(
         model: SOFA, 
         view: str, 
-        factor: int=0
+        factor: int
         ) -> Axes:
     """
     Plot the loadings of a specific factor for a given view in the SOFA model.
@@ -32,7 +32,7 @@ def plot_loadings(
     view : str
         The name of the view to plot the loadings for.
     factor : int, optional
-        The index of the factor to plot the loadings for. Default is 0.
+        The index of the factor to plot the loadings for.
     Returns
     -------
     matplotlib Axes object
@@ -40,7 +40,10 @@ def plot_loadings(
     """
     
     if not hasattr(model, f"W"):
-        model.W = [model.predict(f"W_{i}", num_split=10000) for i in range(len(model.X))] 
+        model.W = [model.predict(f"W_{i}", num_split=10000) for i in range(len(model.X))]
+    # correct for pythonic indexing
+    factor = factor-1
+    
     W = get_loadings(model, view)
     W = W.loc[factor, :]
     W_sorted = W.sort_values()
@@ -90,7 +93,8 @@ def plot_top_loadings(
     """
     if not hasattr(model, f"W"):
         model.W = [model.predict(f"W_{i}", num_split=10000) for i in range(len(model.X))]
-        
+    # correct for pythonic indexing
+    factor = factor-1    
     W = get_loadings(model, view)
     W = W.loc[factor,:]
 
@@ -395,9 +399,8 @@ def plot_enrichment(
     
     # Add labels and title
     ax.set_xlabel('-log10 adjusted p-values')
-    ax.set_ylabel('Terms')
+    ax.set_ylabel('Gene sets')
 
-    plt.gca().xaxis.set_major_formatter(FuncFormatter(_abs_formatter))
     handles, labels = ax.get_legend_handles_labels()
     unique = [(h, l) for i, (h, l) in enumerate(zip(handles, labels)) if l not in labels[:i]]
     ax.legend(*zip(*unique),loc='upper center', bbox_to_anchor=(0, -0.2), ncol=int(len(db)/2+1))

@@ -32,7 +32,8 @@ def get_ad(data: pd.DataFrame,
     name : str
         The name of the variable.
     llh : str, optional
-        The likelihood of the data. Default is "gaussian".
+        The likelihood of the data. It should be "gaussian", "bernoulli" or
+        "categorical". Default is "gaussian".
     select_hvg: bool, optional
         whether to select highly variable features.
     log: bool, optional
@@ -241,7 +242,7 @@ def get_factors(model: SOFA,
         Z = pd.DataFrame(model.Z, columns =  col_labels)
     return Z
 
-def get_top_loadings(model,view, factor=0, sign="+", top_n=100):
+def get_top_loadings(model,view, factor, sign="+", top_n=100):
     """
     Get the top_n loadings of the model for a specific view.
     
@@ -252,7 +253,8 @@ def get_top_loadings(model,view, factor=0, sign="+", top_n=100):
     view : str
         Name of the view to get the loadings for.
     factor : int
-        Index of the factor to get the top loadings for.
+        Index of the factor to get the top loadings for. 
+        Should be between 1 and the total number of factors.
     sign : str
         Sign of the loadings to get. Default is "+".
     top_n : int
@@ -263,6 +265,8 @@ def get_top_loadings(model,view, factor=0, sign="+", top_n=100):
         DataFrame containing the top_n loadings of the model for the specified view.
     """
     assert(sign=="+" or sign=="-")
+    # correct for pythonic indexing
+    factor = factor-1
     W = get_loadings(model, view)
     W = W.loc[factor,:]
     if sign == "+":
