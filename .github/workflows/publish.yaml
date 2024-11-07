@@ -3,7 +3,7 @@ on:
   release:
     types:
       - created
-  # workflow_dispatch: to trigger manually
+  workflow_dispatch: to trigger manually
 jobs:
   publish:
     strategy:
