@@ -126,7 +126,7 @@ def test_get_factors(sample_model, sample_data):
 def test_get_top_loadings(sample_model):
     # Test case 1: model with positive loadings
     model = sample_model
-    topW = get_top_loadings(model, 'view1', factor=0, sign='+', top_n=1)
+    topW = get_top_loadings(model, 'view1', factor=1, sign='+', top_n=1)
     assert isinstance(topW, list)
     pyro.clear_param_store()
 

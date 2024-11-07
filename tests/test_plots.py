@@ -5,13 +5,13 @@ from sofa.plots.plots import plot_loadings, plot_top_loadings, plot_variance_exp
 
 def test_plot_loadings(sample_model):
     # Test plot_loadings function
-    ax = plot_loadings(sample_model, "view1", 0)
+    ax = plot_loadings(sample_model, "view1", 1)
     assert ax is not None
     # Add more assertions if needed
 
 def test_plot_top_loadings(sample_model):
     # Test plot_top_loadings function
-    ax = plot_top_loadings(sample_model, "view1", 0)
+    ax = plot_top_loadings(sample_model, "view1", 1)
     assert ax is not None
     # Add more assertions if needed
 
