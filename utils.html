@@ -175,7 +175,8 @@ that is explained by each factor.</p>
 </dd>
 <dt>name<span class="classifier">str</span></dt><dd><p>The name of the variable.</p>
 </dd>
-<dt>llh<span class="classifier">str, optional</span></dt><dd><p>The likelihood of the data. Default is “gaussian”.</p>
+<dt>llh<span class="classifier">str, optional</span></dt><dd><p>The likelihood of the data. It should be “gaussian”, “bernoulli” or
+“categorical”. Default is “gaussian”.</p>
 </dd>
 <dt>select_hvg: bool, optional</dt><dd><p>whether to select highly variable features.</p>
 </dd>
@@ -292,14 +293,15 @@ categorical cross entropy for categorical Y of the model.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="sofa.utils.utils.get_top_loadings">
-<span class="sig-prename descclassname"><span class="pre">sofa.utils.utils.</span></span><span class="sig-name descname"><span class="pre">get_top_loadings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sign</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'+'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">top_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sofa.utils.utils.get_top_loadings" title="Permalink to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">sofa.utils.utils.</span></span><span class="sig-name descname"><span class="pre">get_top_loadings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">view</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">factor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sign</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'+'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">top_n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#sofa.utils.utils.get_top_loadings" title="Permalink to this definition"></a></dt>
 <dd><p>Get the top_n loadings of the model for a specific view.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>model</strong> (<a class="reference internal" href="sofa.html#sofa.models.SOFA.SOFA" title="sofa.models.SOFA.SOFA"><em>SOFA</em></a>) – The trained SOFA model.</p></li>
 <li><p><strong>view</strong> (<em>str</em>) – Name of the view to get the loadings for.</p></li>
-<li><p><strong>factor</strong> (<em>int</em>) – Index of the factor to get the top loadings for.</p></li>
+<li><p><strong>factor</strong> (<em>int</em>) – Index of the factor to get the top loadings for.
+Should be between 1 and the total number of factors.</p></li>
 <li><p><strong>sign</strong> (<em>str</em>) – Sign of the loadings to get. Default is “+”.</p></li>
 <li><p><strong>top_n</strong> (<em>int</em>) – Number of top loadings to get. Default is 100.</p></li>
 </ul>
