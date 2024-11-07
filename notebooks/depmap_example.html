@@ -395,7 +395,7 @@ div.rendered_html tbody tr:hover {
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>!wget https://zenodo.org/records/14044221/files/pancan_depmap.h5mu?download=1
@@ -415,7 +415,10 @@ HTTP request sent, awaiting response... 200 OK
 Length: 79551896 (76M) [application/octet-stream]
 Saving to: ‘pancan_depmap.h5mu?download=1’
 
-            pancan_  38%[======&gt;             ]  29.50M   428KB/s    eta 63s
+pancan_depmap.h5mu? 100%[===================&gt;]  75.87M   534KB/s    in 1m 55s
+
+2024-11-07 10:05:26 (677 KB/s) - ‘pancan_depmap.h5mu?download=1’ saved [79551896/79551896]
+
 </pre></div></div>
 </div>
 <div class="nbinput nblast docutils container">
@@ -424,8 +427,6 @@ Saving to: ‘pancan_depmap.h5mu?download=1’
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import warnings
 warnings.filterwarnings(&#39;ignore&#39;)
-import sys
-sys.path.append(&quot;/home/capraz/hubershare/SOFA&quot;)
 import pandas as pd
 import sofa
 import numpy as np
