@@ -206,11 +206,18 @@ def get_loadings(model: SOFA,
     pd.DataFrame
         DataFrame containing the loadings of the model for the specified view.
     """
+    ind_labels = np.array([f"Factor_{i+1}" for i in range(model.num_factors)], dtype=object)
+    if model.Ymdata is not None:
+        guided_factors = list(model.Ymdata.mod.keys())
+        for i in range(len(guided_factors)):
+            s =  " (" + guided_factors[i] + ")"
+            ind_labels[model.design.cpu().numpy()[i,:]==1] = ind_labels[model.design.cpu().numpy()[i,:]==1] + s
+
     if hasattr(model, f"W"):
-        W = pd.DataFrame(model.W[model.views.index(view)], columns = model.Xmdata.mod[view].var_names)
+        W = pd.DataFrame(model.W[model.views.index(view)], index = ind_labels,  columns = model.Xmdata.mod[view].var_names)
     else:
         model.W = [model.predict(f"W_{i}", num_split=10000) for i in range(len(model.X))]   
-        W = pd.DataFrame(model.W[model.views.index(view)], columns = model.Xmdata.mod[view].var_names)
+        W = pd.DataFrame(model.W[model.views.index(view)],  index = ind_labels, columns = model.Xmdata.mod[view].var_names)
     return W
 
 def get_factors(model: SOFA,
@@ -228,7 +235,7 @@ def get_factors(model: SOFA,
         DataFrame containing the loadings of the model for the specified view.
     """
 
-    col_labels = np.array([f"Factor_{i}" for i in range(model.num_factors)], dtype=object)
+    col_labels = np.array([f"Factor_{i+1}" for i in range(model.num_factors)], dtype=object)
     if model.Ymdata is not None:
         guided_factors = list(model.Ymdata.mod.keys())
         for i in range(len(guided_factors)):
@@ -236,10 +243,10 @@ def get_factors(model: SOFA,
             col_labels[model.design.cpu().numpy()[i,:]==1] = col_labels[model.design.cpu().numpy()[i,:]==1] + s
 
     if hasattr(model, f"Z"):
-        Z = pd.DataFrame(model.Z, columns = col_labels)
+        Z = pd.DataFrame(model.Z, index = model.Xmdata.obs.index, columns = col_labels)
     else:
         model.Z = model.predict("Z")
-        Z = pd.DataFrame(model.Z, columns =  col_labels)
+        Z = pd.DataFrame(model.Z, index = model.Xmdata.obs.index, columns =  col_labels)
     return Z
 
 def get_top_loadings(model,view, factor, sign="+", top_n=100):
