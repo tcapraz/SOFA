@@ -135,6 +135,7 @@ def test_get_top_loadings(sample_model):
 
 
 # Test get_gsea_enrichment function
+# need to add local enrichment database otherwise could fail if no internet connection
 #def test_get_gsea_enrichment():
     # Test case 1: gene_list, db, and background as lists
 #    gene_list = ["IGF2" 	,"DLK1" ,	"CYP17A1" ]
