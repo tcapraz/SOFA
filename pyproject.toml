@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "biosofa"
-version = "0.7.4"
+version = "0.7.5"
 description = "Probabilistic factor analysis model with covariate guided factors"
 authors = ["capraz <tuemayc@hotmail.com>"]
 readme = "README.md"
