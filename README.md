@@ -1,7 +1,7 @@
 # Semi-supervised Omics Factor Analysis (SOFA)
 
 
-![PyPI - Version](https://img.shields.io/pypi/v/biosofa?link=https%3A%2F%2Fpypi.org%2Fproject%2Fbiosofa%2F)
+[![PyPI version](https://badge.fury.io/py/biosofa.svg)](https://badge.fury.io/py/biosofa)
 
 # Introduction
 
