@@ -16,6 +16,7 @@ from pandas import DataFrame
 from collections import defaultdict
 from anndata import AnnData
 import pandas as pd
+import warnings
 
 sigmoid = nn.Sigmoid()
 softmax = nn.Softmax(dim=1)
@@ -94,6 +95,11 @@ class SOFA:
         self.horseshoe = horseshoe
         self.history = []
         self.update_freq = update_freq
+        if metadata is not None:
+            if metadata.shape[0] != self.num_samples:
+                raise ValueError('Shape mismatch: Number of samples in metadata not equal to number of samples in Xmdata!')
+            elif ~np.all(metadata.index == Xmdata.obs_names): 
+                warnings.warn("Index of metadata not matching index of Xmdata!")
         self.metadata = metadata
         self.verbose = verbose
         self.horseshoe_scale_feature = horseshoe_scale_feature 
@@ -649,7 +655,10 @@ class SOFA:
             mdata.uns["guide_mod"] = None
         mdata.uns["input_num_factors"] = self.num_factors
         mdata.uns["horseshoe"] = self.horseshoe
-
+        
+        if self.metadata is not None:
+            mdata.obs = self.metadata
+        
         return mdata
 
     def _get_param(self, param):

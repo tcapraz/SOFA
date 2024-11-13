@@ -411,8 +411,28 @@ def save_model(model, file_prefix):
     """
 
     model_mdata = model.save_as_mudata()
-    model_mdata.write(file_prefix+".h5mu")
-    
+    try:
+        model_mdata.write(file_prefix+".h5mu")
+    except RuntimeError:
+        print("Metadata probably too long to save. Please save the metadata separately. \nSaving model without metadata!")
+        # remove metadata if saving does not work
+        model_mdata.obs = pd.DataFrame(index=model_mdata.obs.index)
+        # save model without metadata
+        model_mdata.write(file_prefix+".h5mu")
+    except TypeError:
+        print("Mixed type columns are currently not supported when saving metadata of a model. Please save the metadata separately.\nSaving model without metadata!")
+        # remove metadata if saving does not work
+        model_mdata.obs = pd.DataFrame(index=model_mdata.obs.index)
+        # save model without metadata
+        model_mdata.write(file_prefix+".h5mu")
+    except Exception:
+        print("Unexpected error! \nSaving model without metadata!")
+        # remove metadata if saving does not work
+        model_mdata.obs = pd.DataFrame(index=model_mdata.obs.index)
+        # save model without metadata
+        model_mdata.write(file_prefix+".h5mu")
+
+        
     dict_ = pyro.get_param_store()
     dict_.save(file_prefix +".save")
     return file_prefix +".h5mu", file_prefix +".save"
@@ -445,7 +465,11 @@ def load_model(file_prefix):
         design = np.array(0)
     num_factors = mdata.uns["input_num_factors"]
     # TODO find way to save and load mixed column metadata
-    #metadata = mdata.uns["metadata"]
+    # check if entries in obs (metadata)
+    if mdata.obs.shape[1] !=0:
+        metadata = mdata.obs
+    else:
+        metadata = None
 
     horseshoe = mdata.uns["horseshoe"]
     # apparently mu.read does not read None type in uns so 
@@ -463,6 +487,7 @@ def load_model(file_prefix):
                   device=device,
                   horseshoe=horseshoe,
                   subsample=0,
+                  metadata = metadata,
                   seed=seed)
     model.Z = mdata.uns["Z"]
     W = [mdata.uns[f"W_{i}"] for i in model.views]
