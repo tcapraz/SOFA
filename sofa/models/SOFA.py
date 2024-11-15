@@ -5,6 +5,8 @@ import torch
 import pyro.distributions as dist
 from pyro.infer import SVI, Trace_ELBO
 from pyro.infer import Predictive
+from pyro.distributions import TransformedDistribution
+from pyro.distributions.transforms import ExpTransform
 import numpy as np
 from pyro.optim import Adam
 import torch.nn as nn
@@ -71,6 +73,7 @@ class SOFA:
                  horseshoe_scale_feature: float=1,
                  horseshoe_scale_factor: float=1,
                  horseshoe_scale_global: float=1,
+                 disp_mean: float=3,
                  seed: Optional[Union[None, int]]=None
                  ):
  
@@ -105,7 +108,7 @@ class SOFA:
         self.horseshoe_scale_feature = horseshoe_scale_feature 
         self.horseshoe_scale_factor = horseshoe_scale_factor
         self.horseshoe_scale_global = horseshoe_scale_global
-        
+        self.disp_mean = disp_mean
         if Ymdata is not None:
             self.Y, self.guide_views, self.guide_llh, self.k, self.y_dim, self.Ymask, self.relative_guide_scale  = self._guide_handler()
             # calculate scale for guide likelihood based on number of features in X
@@ -122,7 +125,8 @@ class SOFA:
             self.supervised_factors = torch.sum(torch.any(design!=0, dim=0))
         else:
             self.design = None
-
+        if "negativebinomial" in self.llh:
+            self.size_factor = [np.log(self.X[i].sum(axis=1, keepdims=True)) for i in range(len(self.X))]
         self.subsample = subsample
     
     def _data_handler(self):
@@ -191,10 +195,19 @@ class SOFA:
         
         num_samples = X[0].shape[0]
         num_features = [i.shape[1] for i in X]
-        
+
+
         sigma_data = []
+        disp=[]
+        rate=[]
         for i in range(num_views):
-            sigma_data.append(pyro.param(f"sigma_data_{i}", torch.ones(num_features[i], device=device), constraint=pyro.distributions.constraints.positive))
+            if self.llh[i] == "gaussian":
+                sigma_data.append(pyro.param(f"sigma_data_{i}", torch.ones(num_features[i], device=device), constraint=pyro.distributions.constraints.positive))
+            elif self.llh[i] == "negativebinomial":
+                with pyro.plate("features_{}".format(i), num_features[i]):
+                    disp.append(pyro.sample(f"disp_{i}", dist.Exponential(torch.tensor(self.disp_mean, device=device))))
+                    rate.append(pyro.deterministic(f"rate_{i}", (1 / disp[i])))
+                    
         if Y != None:
             sigma_response = pyro.param("sigma_response", torch.ones(num_guide_views, device=device), constraint=pyro.distributions.constraints.positive)
 
@@ -210,8 +223,7 @@ class SOFA:
                     lam_feature = pyro.sample("lam_feature_{}".format(i), dist.HalfCauchy(torch.ones(num_features[i], device=device)*self.horseshoe_scale_feature).to_event(1))
                     lam_factor.append(pyro.sample("lam_factor_{}".format(i), dist.HalfCauchy(torch.ones(1, device=device)*self.horseshoe_scale_factor)))
                     #W_ = pyro.deterministic("W_{}".format(i), (W_.T * torch.sqrt(lam_feature.T) * torch.sqrt(lam_factor[i])  * torch.sqrt(tau[i])).T)
-                    #print(lam_feature.shape)
-                    #print(torch.unsqueeze(lam_factor[i],1).expand(-1, lam_feature.shape[1]).shape)
+
                     factor_scale = torch.unsqueeze(lam_factor[i],1).expand(-1, lam_feature.shape[1])
                     w_scale = lam_feature * factor_scale  * tau[i]+ 1e-20
                     W_ = pyro.sample("W_unshrunk_{}".format(i), dist.Normal(torch.zeros(num_features[i], device=device), w_scale).to_event(1))
@@ -244,22 +256,24 @@ class SOFA:
         with data_plate as ind:
             ind = ind.flatten()
             Z = pyro.sample("Z", dist.Normal(torch.zeros(num_factors, device=device), torch.ones(num_factors, device=device)).to_event(1))
-            X_pred = []
             for i in range(num_views):
                 with pyro.poutine.scale(scale=self.scale[i]):
                     with pyro.poutine.mask(mask=self.Xmask[i][ind]):
                         if llh[i] == "bernoulli":
-                            X_pred.append(Z @ W[i])
                             X_i = pyro.deterministic(f"X_{i}", sigmoid(Z @ W[i]))
                             #for j in range(num_factors):
                             #    X_ij = pyro.deterministic(f"X_{i}{j}", sigmoid(Z[:, [j]] @ W[i][[j], :]))
-                            pyro.sample("obs_data_{}".format(i), dist.Bernoulli(sigmoid(X_pred[i])).to_event(1), obs=X[i][ind,:])
-                        else:
+                            pyro.sample("obs_data_{}".format(i), dist.Bernoulli(X_i).to_event(1), obs=X[i][ind,:])
+                        elif llh[i] == "gaussian":
                             #for j in range(num_factors):
                             #    X_ij = pyro.deterministic(f"X_{i}{j}", Z[:, [j]] @ W[i][[j], :])
                             X_i = pyro.deterministic(f"X_{i}", Z @ W[i])
-                            X_pred.append(X_i)
                             pyro.sample("obs_data_{}".format(i), dist.Normal(X_i, sigma_data[i]).to_event(1), obs=X[i][ind,:])
+                        elif llh[i] == "negativebinomial":
+                            mu_i = torch.exp(self.size_factor[i][ind] + Z @ W[i])
+
+                            pyro.sample("obs_data_{}".format(i), dist.GammaPoisson(rate[i], rate[i]/mu_i).to_event(1), obs=X[i][ind,:])
+
             if supervised_factors > 0:
                 for i in range(num_guide_views):
                     with pyro.poutine.scale(scale=self.guide_scale[i]):
@@ -291,6 +305,18 @@ class SOFA:
         Z_loc = pyro.param("Z_loc", torch.zeros((num_samples, num_factors), device=device))
         Z_scale = pyro.param("Z_scale", torch.ones((num_samples, num_factors), device=device), constraint=pyro.distributions.constraints.positive)
         
+
+        disp_loc =[]
+        disp_scale = []
+        for i in range(num_views):
+            if self.llh[i] == "negativebinomial":
+                disp_loc.append(pyro.param(f"disp_loc_{i}", torch.zeros(num_features[i], device=device)))
+                disp_scale.append(pyro.param(f"disp_scale_{i}", 0.1 * torch.ones(num_features[i], device=device), constraint=pyro.distributions.constraints.positive))
+        
+                with pyro.plate("features_{}".format(i), num_features[i]):
+                    d = pyro.sample(f"disp_{i}", TransformedDistribution(dist.Normal(disp_loc[i], disp_scale[i]), ExpTransform()))
+                    
+
         beta_loc = []
         beta_scale = []
         beta0_loc = []
@@ -305,8 +331,7 @@ class SOFA:
                     with pyro.plate(f"betas_{i}", int(torch.sum(design[i,:]))):
                         beta = pyro.sample(f"beta_{i}", dist.Normal(beta_loc[i], beta_scale[i]).to_event(1))
                     beta0= pyro.sample(f"beta0_{i}", dist.Normal(beta0_loc[i], beta0_scale[i]).to_event(1))
-                    #print(beta0.shape)
-                    #print(beta.shape)
+
 
                 else:
                     beta_loc.append(pyro.param(f"beta_loc_{i}", torch.zeros(int(torch.sum(design[i,:])), self.y_dim[i], device=device)))
