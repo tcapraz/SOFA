@@ -8,7 +8,7 @@ from pyro.infer import Predictive
 from pyro.distributions import TransformedDistribution
 from pyro.distributions.transforms import ExpTransform
 import numpy as np
-from pyro.optim import Adam
+from pyro.optim import Adam, ClippedAdam
 import torch.nn as nn
 from tqdm import tqdm
 import muon as mu
@@ -73,7 +73,7 @@ class SOFA:
                  horseshoe_scale_feature: float=1,
                  horseshoe_scale_factor: float=1,
                  horseshoe_scale_global: float=1,
-                 disp_mean: float=3,
+                 disp_mean: float=3.,
                  seed: Optional[Union[None, int]]=None
                  ):
  
@@ -126,7 +126,7 @@ class SOFA:
         else:
             self.design = None
         if "negativebinomial" in self.llh:
-            self.size_factor = [np.log(self.X[i].sum(axis=1, keepdims=True)) for i in range(len(self.X))]
+            self.size_factor = [torch.log(self.X[i].sum(axis=1, keepdims=True)) for i in range(len(self.X))]
         self.subsample = subsample
     
     def _data_handler(self):
@@ -200,13 +200,16 @@ class SOFA:
         sigma_data = []
         disp=[]
         rate=[]
+        intercept=[]
         for i in range(num_views):
             if self.llh[i] == "gaussian":
                 sigma_data.append(pyro.param(f"sigma_data_{i}", torch.ones(num_features[i], device=device), constraint=pyro.distributions.constraints.positive))
             elif self.llh[i] == "negativebinomial":
+                intercept.append(pyro.param(f"intercept_{i}", torch.zeros(num_features[i], device=device)))
                 with pyro.plate("features_{}".format(i), num_features[i]):
                     disp.append(pyro.sample(f"disp_{i}", dist.Exponential(torch.tensor(self.disp_mean, device=device))))
                     rate.append(pyro.deterministic(f"rate_{i}", (1 / disp[i])))
+                    #intercept.append(pyro.sample(f"intercept_{i}", dist.Normal(torch.tensor(0., device=device), torch.tensor(1., device=device))))
                     
         if Y != None:
             sigma_response = pyro.param("sigma_response", torch.ones(num_guide_views, device=device), constraint=pyro.distributions.constraints.positive)
@@ -270,9 +273,16 @@ class SOFA:
                             X_i = pyro.deterministic(f"X_{i}", Z @ W[i])
                             pyro.sample("obs_data_{}".format(i), dist.Normal(X_i, sigma_data[i]).to_event(1), obs=X[i][ind,:])
                         elif llh[i] == "negativebinomial":
-                            mu_i = torch.exp(self.size_factor[i][ind] + Z @ W[i])
-
-                            pyro.sample("obs_data_{}".format(i), dist.GammaPoisson(rate[i], rate[i]/mu_i).to_event(1), obs=X[i][ind,:])
+                            #interc = pyro.deterministic(f"intercept_{i}", self.size_factor[i][ind] + intercept[i])
+                            #interc = intercept[i].reshape(1,-1)
+                            #print(interc.shape)
+                            mu_i = torch.exp(self.size_factor[i][ind,:] + Z @ W[i] + intercept[i])
+                            #if torch.any(mu_i ==0):
+                                #print(mu_i[mu_i ==0])
+                            #if torch.any(rate[i]==0):
+                                #print(rate[i][rate[i]==0])
+                            pyro.deterministic(f"X_{i}", mu_i)
+                            pyro.sample("obs_data_{}".format(i), dist.GammaPoisson(rate[i], (rate[i]/mu_i)+1e-20).to_event(1), obs=X[i][ind,:])
 
             if supervised_factors > 0:
                 for i in range(num_guide_views):
@@ -306,16 +316,19 @@ class SOFA:
         Z_scale = pyro.param("Z_scale", torch.ones((num_samples, num_factors), device=device), constraint=pyro.distributions.constraints.positive)
         
 
-        disp_loc =[]
+        disp_loc = []
         disp_scale = []
+        intercept_loc = []
+        intercept_scale = []
         for i in range(num_views):
             if self.llh[i] == "negativebinomial":
                 disp_loc.append(pyro.param(f"disp_loc_{i}", torch.zeros(num_features[i], device=device)))
                 disp_scale.append(pyro.param(f"disp_scale_{i}", 0.1 * torch.ones(num_features[i], device=device), constraint=pyro.distributions.constraints.positive))
-        
+                #intercept_loc.append(pyro.param(f"intercept_loc_{i}", torch.zeros(num_features[i], device=device)))
+                #intercept_scale.append(pyro.param(f"intercept_scale_{i}", 0.1 * torch.ones(num_features[i], device=device), constraint=pyro.distributions.constraints.positive))
                 with pyro.plate("features_{}".format(i), num_features[i]):
-                    d = pyro.sample(f"disp_{i}", TransformedDistribution(dist.Normal(disp_loc[i], disp_scale[i]), ExpTransform()))
-                    
+                    pyro.sample(f"disp_{i}", TransformedDistribution(dist.Normal(disp_loc[i], disp_scale[i]), ExpTransform()))
+                    #pyro.sample(f"intercept_{i}", dist.Normal(intercept_loc[i], intercept_scale[i]))
 
         beta_loc = []
         beta_scale = []
@@ -530,8 +543,8 @@ class SOFA:
         None.
         """
 
-        adam_params = {"lr": lr, "betas": (0.95, 0.999)}
-        optimizer = Adam(adam_params)
+        adam_params = {"lr": lr, "betas": (0.95, 0.999), "eps":1e-6}
+        optimizer = ClippedAdam(adam_params)
 
         if not self.isfit or refit:
             pyro.clear_param_store()
@@ -625,7 +638,7 @@ class SOFA:
         if verbose:
             pbar_pred = tqdm(range(len(split_obs)))
             for i in pbar_pred:
-                predictive = Predictive(self.sFA_model, guide=self.sFA_guide, num_samples=num_samples, return_sites=[site])
+                predictive = Predictive(self._SOFA_model, guide=self._SOFA_guide, num_samples=num_samples, return_sites=[site])
                 samples = predictive(idx=split_obs[i], subsample=0)
                 pred.append(np.mean(samples[site].cpu().numpy(), axis=0))
                 torch.cuda.empty_cache()
