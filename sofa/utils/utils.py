@@ -249,10 +249,10 @@ def get_factors(model: SOFA,
         Z = pd.DataFrame(model.Z, index = model.Xmdata.obs.index, columns =  col_labels)
     return Z
 
-def get_top_loadings(model,view, factor, sign="+", top_n=100):
+def get_top_loadings(model, view, factor, sign="+", top_n=100):
     """
     Get the top_n loadings of the model for a specific view.
-    
+
     Parameters
     ----------
     model : SOFA
@@ -260,7 +260,7 @@ def get_top_loadings(model,view, factor, sign="+", top_n=100):
     view : str
         Name of the view to get the loadings for.
     factor : int
-        Index of the factor to get the top loadings for. 
+        Index of the factor to get the top loadings for.
         Should be between 1 and the total number of factors.
     sign : str
         Sign of the loadings to get. Default is "+".
@@ -271,18 +271,21 @@ def get_top_loadings(model,view, factor, sign="+", top_n=100):
     pandas.DataFrame
         DataFrame containing the top_n loadings of the model for the specified view.
     """
-    assert(sign=="+" or sign=="-")
+    assert sign == "+" or sign == "-", "sign must be '+' or '-'"
     # correct for pythonic indexing
-    factor = factor-1
+    factor = factor - 1
+    # validate factor is within expected range
     W = get_loadings(model, view)
-    W = W.iloc[factor,:]
+    assert factor >= 0 and factor < W.shape[0], "factor is out of range."
+    assert top_n <= W.shape[1], "top_n is larger than the number of features in the view."
+    # select factor
+    W = W.iloc[factor, :]
+    # sort W
     if sign == "+":
-        idx = np.argpartition(W, -top_n)[-top_n:]
-        topW = W.index[idx]
-    elif sign=="-":
-        idx = np.argpartition(W*-1, -top_n)[-top_n:]
-        topW = W.index[idx]
-    return topW.tolist()
+        sorted_W = W.sort_values(ascending=False)
+    else:
+        sorted_W = W.sort_values(ascending=True)
+    return sorted_W.iloc[:top_n].index.to_list()
 
 def get_gsea_enrichment(gene_list, db, background):
     """
