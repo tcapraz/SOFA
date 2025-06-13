@@ -493,6 +493,9 @@ def load_model(file_prefix):
     W = [mdata.uns[f"W_{i}"] for i in model.views]
     model.W = W
     model.X_pred =[mdata.uns[f"X_{i}"] for i in model.views]
+    if Ymdata is not None:
+        model.Y_pred = [mdata.uns[f"Y_pred_{i}"] for i in Ymdata.mod]
+
     model.history = mdata.uns["history"]
     
     # load pyro paramstore
