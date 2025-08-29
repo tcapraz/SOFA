@@ -484,7 +484,7 @@ class SOFA:
             else:
                 return X, W, Z 
     
-    def fit(self, n_steps=3000, lr=0.005, refit=False, predict=True):
+    def fit(self, n_steps=3000, lr=0.005, refit=False, predict=True, early_stopping=False, early_stopping_delta=0.01):
         """
         method to fit the SOFA model
 
@@ -515,7 +515,8 @@ class SOFA:
             #self.elbo_terms = {"obs_data_" + str(i):[] for i in range(len(self.X))}
             #if self.Y is not None:
             #    self.elbo_terms.update({"obs_response_" + str(i):[] for i in range(len(self.Y))})
-
+            self.llh_history = []
+            
         self.gradient_norms = defaultdict(list)
         
         if self.verbose:
@@ -536,10 +537,18 @@ class SOFA:
                     if self.verbose:
                         pbar.set_description(f"Current Elbo {loss:.2E} | Delta: {delta:.0f}")
                     last_elbo = loss
+                if early_stopping==True and step>=3000:
+                    delta = np.mean(self.history[-1000:-500])-np.mean(self.history[-500:])
+                    if delta/loss < early_stopping_delta:
+                        print("Early stopping training because relative change in ELBO is less than ", str(early_stopping_delta))
+                        pbar.close()
+                        break
                 
                 
                 guide_trace = pyro.poutine.trace(self._SOFA_guide).get_trace(idx = self.idx, subsample=0)
                 model_trace = pyro.poutine.trace(pyro.poutine.replay(self._SOFA_model, guide_trace)).get_trace(idx = self.idx, subsample=0)
+                self.llh_history.append(model_trace.log_prob_sum().detach().cpu())
+
                 #for i in self.elbo_terms:
                 #    self.elbo_terms[i].append(model_trace.nodes[i]["fn"].log_prob(model_trace.nodes[i]["value"]).sum().detach().cpu().numpy())
         else:
@@ -547,11 +556,16 @@ class SOFA:
                 loss = self.svi.step(idx=self.idx, subsample=self.subsample)
                 # track loss
                 self.history.append(loss)
-                if step == 0:
-                    for name, value in pyro.get_param_store().named_parameters():
-                        value.register_hook(
-                            lambda g, name = name: self.gradient_norms[name].append(g.norm().item())
-                        )
+        #        if step == 0:
+        #            for name, value in pyro.get_param_store().named_parameters():
+        #                value.register_hook(
+        #                    lambda g, name = name: self.gradient_norms[name].append(g.norm().item())
+        #                )
+                if early_stopping==True and step>=3000 and step % self.update_freq == 0:
+                    delta = np.mean(self.history[-1000:-500])-np.mean(self.history[-500:])
+                    if delta/loss < early_stopping_delta:
+                        print("Early stopping training because relative change in ELBO is less than ", str(early_stopping_delta))
+                        break
 
         self.isfit = True
         # convert to loss
