@@ -17,6 +17,8 @@ from collections import defaultdict
 from anndata import AnnData
 import pandas as pd
 import warnings
+from torch.utils.data import DataLoader
+from .train_utils import MuDataDataset
 
 sigmoid = nn.Sigmoid()
 softmax = nn.Softmax(dim=1)
@@ -86,12 +88,17 @@ class SOFA:
         self.isfit = False
         self.Xmdata = Xmdata
         self.Ymdata = Ymdata
+        self.subsample = subsample
+
         if Xmdata is not None:
             self.X, self.views, self.llh, self.Xmask = self._data_handler()
             self.scale = np.ones(len(Xmdata.mod))
             self.num_samples = Xmdata.n_obs
             self.idx = torch.arange(self.num_samples)
             self.total_n_features = np.sum([self.Xmdata.mod[i].X.shape[1] for i in self.Xmdata.mod])
+        else: 
+            self.X = None
+            self.Xmask = None
         self.horseshoe = horseshoe
         self.history = []
         self.update_freq = update_freq
@@ -116,14 +123,15 @@ class SOFA:
             self.Y = None
             self.guide_llh = None
             self.supervised_factors = 0
-                
+            self.Ymask=None
+        self._set_up_dataloader(self.X, self.Y, self.Xmask, self.Ymask)
+        
         if design is not None:
             self.design = design.to(device)
             self.supervised_factors = torch.sum(torch.any(design!=0, dim=0))
         else:
             self.design = None
 
-        self.subsample = subsample
     
     def _data_handler(self):
         views = []
@@ -134,9 +142,10 @@ class SOFA:
             views.append(i)
             data = self.Xmdata.mod[i].X.copy()
             data[np.isnan(data)] = 0
-            X.append(torch.tensor(data).to(self.device))
+            X.append(torch.tensor(data))
             llh.append(self.Xmdata.mod[i].uns["llh"])
-            mask.append(torch.tensor(self.Xmdata.mod[i].obsm["mask"]).to(self.device))
+            mask.append(torch.tensor(self.Xmdata.mod[i].obsm["mask"]))
+        
         return X, views, llh, mask
     
     def _guide_handler(self):
@@ -153,7 +162,7 @@ class SOFA:
             data = self.Ymdata.mod[i].X.copy()
             data[np.isnan(data)] = 0
 
-            y = torch.tensor(data).to(self.device)
+            y = torch.tensor(data)
             if y.dtype == np.str_:
                 self.le.append(preprocessing.LabelEncoder())
                 y = torch.tensor(self.le[ix].fit_transform(y)).to(self.device)
@@ -161,7 +170,7 @@ class SOFA:
             g_scale = self.Ymdata.mod[i].uns["scaling_factor"]
             guide_llh.append(t_llh)
             relative_guide_scale.append(g_scale)
-            mask.append(torch.tensor(self.Ymdata.mod[i].obsm["mask"]).to(self.device))
+            mask.append(torch.tensor(self.Ymdata.mod[i].obsm["mask"]))
             if t_llh == "multinomial":
                 k.append(len(np.unique(y.cpu().numpy())))
                 Y.append(y.flatten())
@@ -175,9 +184,56 @@ class SOFA:
                 y_dim.append(1)
         return Y, guide_views, guide_llh, k, y_dim, mask, relative_guide_scale
     
-    def _SOFA_model(self, idx, subsample=32):
-        X = self.X
-        Y = self.Y
+    def _set_up_dataloader(self, X, Y,Xmask, Ymask):
+        def collate_fn(batch):
+            first = batch[0]
+            collated = {
+                "X": None,
+                "Y": None,
+                "Xmask": None,
+                "Ymask": None,
+                "idx": torch.tensor([b["idx"] for b in batch], dtype=torch.long),
+            }
+
+            if first["X"] is not None:
+                n_mod_X = len(first["X"])
+                collated["X"] = [torch.stack([b["X"][m] for b in batch]) for m in range(n_mod_X)]
+
+            if first["Y"] is not None:
+                n_mod_Y = len(first["Y"])
+                collated["Y"] = [torch.stack([b["Y"][m] for b in batch]) for m in range(n_mod_Y)]
+
+            if first["Xmask"] is not None:
+                n_mod_Xmask = len(first["Xmask"])
+                collated["Xmask"] = [torch.stack([b["Xmask"][m] for b in batch]) for m in range(n_mod_Xmask)]
+
+            if first["Ymask"] is not None:
+                n_mod_Ymask = len(first["Ymask"])
+                collated["Ymask"] = [torch.stack([b["Ymask"][m] for b in batch]) for m in range(n_mod_Ymask)]
+
+            return collated
+
+
+        
+        dataset = MuDataDataset(X, Y, Xmask, Ymask)
+        
+        if self.subsample > 0:
+            bsize = self.subsample
+        elif self.Xmdata is None and self.Ymdata is None:
+            bsize = 1
+        else:
+            bsize = self.num_samples
+        self.dataloader = DataLoader(
+            dataset,
+            batch_size=bsize,
+            shuffle=True,
+            num_workers=8,
+            pin_memory=True,
+            collate_fn=collate_fn
+        )
+    
+    def _SOFA_model(self, X, Y,Xmask, Ymask, ind):
+
         llh = self.llh
         guide_llh = self.guide_llh
         design = self.design
@@ -189,7 +245,8 @@ class SOFA:
         if Y != None:
             num_guide_views = len(Y)
         
-        num_samples = X[0].shape[0]
+        batch_samples = X[0].shape[0]
+        batch_scale = self.num_samples/batch_samples
         num_features = [i.shape[1] for i in X]
         
         sigma_data = []
@@ -236,46 +293,42 @@ class SOFA:
                 beta.append(beta_)
                 beta0.append(beta0_)
               
-        if subsample > 0:
-            data_plate = pyro.plate("data", num_samples, subsample_size=subsample)
-        else:
-            data_plate = pyro.plate("data", num_samples, subsample=idx)
-            
-        with data_plate as ind:
-            ind = ind.flatten()
+
+        data_plate = pyro.plate("data", self.num_samples, subsample=ind)
+         
+        with data_plate:
             Z = pyro.sample("Z", dist.Normal(torch.zeros(num_factors, device=device), torch.ones(num_factors, device=device)).to_event(1))
             X_pred = []
             for i in range(num_views):
-                with pyro.poutine.scale(scale=self.scale[i]):
-                    with pyro.poutine.mask(mask=self.Xmask[i][ind]):
+                with pyro.poutine.scale(scale=self.scale[i] * batch_scale):
+                    with pyro.poutine.mask(mask=Xmask[i]):
                         if llh[i] == "bernoulli":
                             X_pred.append(Z @ W[i])
                             X_i = pyro.deterministic(f"X_{i}", sigmoid(Z @ W[i]))
                             #for j in range(num_factors):
                             #    X_ij = pyro.deterministic(f"X_{i}{j}", sigmoid(Z[:, [j]] @ W[i][[j], :]))
-                            pyro.sample("obs_data_{}".format(i), dist.Bernoulli(sigmoid(X_pred[i])).to_event(1), obs=X[i][ind,:])
+                            pyro.sample("obs_data_{}".format(i), dist.Bernoulli(sigmoid(X_pred[i])).to_event(1), obs=X[i])
                         else:
                             #for j in range(num_factors):
                             #    X_ij = pyro.deterministic(f"X_{i}{j}", Z[:, [j]] @ W[i][[j], :])
                             X_i = pyro.deterministic(f"X_{i}", Z @ W[i])
                             X_pred.append(X_i)
-                            pyro.sample("obs_data_{}".format(i), dist.Normal(X_i, sigma_data[i]).to_event(1), obs=X[i][ind,:])
+                            pyro.sample("obs_data_{}".format(i), dist.Normal(X_i, sigma_data[i]).to_event(1), obs=X[i])
             if supervised_factors > 0:
                 for i in range(num_guide_views):
-                    with pyro.poutine.scale(scale=self.guide_scale[i]):
-                        with pyro.poutine.mask(mask=self.Ymask[i][ind]):
+                    with pyro.poutine.scale(scale=self.guide_scale[i] * batch_scale):
+                        with pyro.poutine.mask(mask=Ymask[i]):
                             y_pred = Z[:, design[i,:]==1] @ beta[i] + beta0[i]
                             pyro.deterministic(f"Y_{i}", y_pred)
                             if guide_llh[i] == "gaussian":
-                                pyro.sample(f"obs_response_{i}", dist.Normal(y_pred, sigma_response[i]).to_event(1), obs=Y[i][ind])
+                                pyro.sample(f"obs_response_{i}", dist.Normal(y_pred, sigma_response[i]).to_event(1), obs=Y[i])
                             elif guide_llh[i] == "bernoulli":
-                                pyro.sample(f"obs_response_{i}", dist.Bernoulli(sigmoid(y_pred)).to_event(1), obs=Y[i][ind])
+                                pyro.sample(f"obs_response_{i}", dist.Bernoulli(sigmoid(y_pred)).to_event(1), obs=Y[i])
                             elif guide_llh[i] == "multinomial":
-                                pyro.sample(f"obs_response_{i}", dist.Categorical(softmax(y_pred)).to_event(1), obs=Y[i][ind])
+                                pyro.sample(f"obs_response_{i}", dist.Categorical(softmax(y_pred)).to_event(1), obs=Y[i])
 
-    def _SOFA_guide(self, idx, subsample=32):
-        X = self.X
-        Y = self.Y
+    def _SOFA_guide(self, X,Y,Xmask, Ymask,ind):
+
         llh = self.llh
         device = self.device
         num_factors = self.num_factors
@@ -352,13 +405,11 @@ class SOFA:
                     #lam_factor = pyro.sample("lam_factor_{}".format(i), dist.Delta(lam_factor_loc[i]))
                     lam_feature = pyro.sample("lam_feature_{}".format(i), dist.LogNormal(lam_feature_loc[i],lam_feature_scale[i]).to_event(1))
                     lam_factor = pyro.sample("lam_factor_{}".format(i), dist.LogNormal(lam_factor_loc[i], lam_factor_scale[i]))
-        if subsample > 0:
-            data_plate = pyro.plate("data", num_samples, subsample_size=subsample)
-        else:
-            data_plate = pyro.plate("data", num_samples, subsample=idx)
+
+        data_plate = pyro.plate("data", self.num_samples, subsample=ind)
             
-        with data_plate as ind:
-            Z = pyro.sample("Z", dist.Normal(Z_loc[ind,:], Z_scale[ind,:]).to_event(1))
+        with data_plate:
+            Z = pyro.sample("Z", dist.Normal(Z_loc, Z_scale).to_event(1))
 
             
     def _simulate(self, sigma_data, num_views, num_features, num_samples,num_factors,llh, num_guide_views=None,sigma_response=None, guide_llh=None, design=None, return_data = False, k=None, y_dim=None):
@@ -431,7 +482,6 @@ class SOFA:
                     X_i_mean = pyro.deterministic(f"X_{i}", sigmoid(Z @ W[i]))
                     X.append(pyro.sample("data_{}".format(i), dist.Bernoulli(sigmoid(X_mean[i])).to_event(1)))
                 else:
-
                     X_i_mean = pyro.deterministic(f"X_{i}", Z @ W[i])
                     X_mean.append(X_i_mean)
                     X.append(pyro.sample("data_{}".format(i), dist.Normal(X_mean[i], sigma_data[i]).to_event(1)))
@@ -524,7 +574,12 @@ class SOFA:
             last_elbo = np.inf
             # do gradient steps
             for step in pbar:
-                loss = self.svi.step(idx=self.idx, subsample=self.subsample)
+                for batch in self.dataloader:
+                # Move modalities to GPU
+                    
+                    batch = move_batch_to_device(batch, self.device)
+
+                    loss = self.svi.step(batch["X"],batch["Y"],batch["Xmask"], batch["Ymask"], batch["idx"])
                 # track loss
                 self.history.append(loss)
                 #if step == 0:
@@ -545,9 +600,9 @@ class SOFA:
                         break
                 
                 
-                guide_trace = pyro.poutine.trace(self._SOFA_guide).get_trace(idx = self.idx, subsample=0)
-                model_trace = pyro.poutine.trace(pyro.poutine.replay(self._SOFA_model, guide_trace)).get_trace(idx = self.idx, subsample=0)
-                self.llh_history.append(model_trace.log_prob_sum().detach().cpu())
+                #guide_trace = pyro.poutine.trace(self._SOFA_guide).get_trace(idx = self.idx, subsample=0)
+                #model_trace = pyro.poutine.trace(pyro.poutine.replay(self._SOFA_model, guide_trace)).get_trace(idx = self.idx, subsample=0)
+                #self.llh_history.append(model_trace.log_prob_sum().detach().cpu())
 
                 #for i in self.elbo_terms:
                 #    self.elbo_terms[i].append(model_trace.nodes[i]["fn"].log_prob(model_trace.nodes[i]["value"]).sum().detach().cpu().numpy())
@@ -699,3 +754,9 @@ class SOFA:
 
 
     
+def move_batch_to_device(batch, device):
+    for key in ["X", "Y", "Xmask", "Ymask"]:
+        if batch[key] is not None:
+            for i in range(len(batch[key])):
+                batch[key][i] = batch[key][i].to(device)
+    return batch
