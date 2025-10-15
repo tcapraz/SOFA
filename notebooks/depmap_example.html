@@ -422,7 +422,7 @@ pancan_depmap.h5mu? 100%[===================&gt;]  75.87M   534KB/s    in 1m 55s
 </pre></div></div>
 </div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import warnings
@@ -440,7 +440,9 @@ import scanpy as sc
 import anndata as ad
 from anndata import AnnData
 import torch
-</pre></div>
+import seaborn.objects as so
+from seaborn import axes_style
+<br/></pre></div>
 </div>
 </div>
 <section id="Analysis-of-DepMap-data">
@@ -485,7 +487,7 @@ accounting for potential/known drivers of variation such as growth rate, microsa
 <section id="Read-data-and-set-hyperparameters">
 <h2>Read data and set hyperparameters<a class="headerlink" href="#Read-data-and-set-hyperparameters" title="Permalink to this headline"></a></h2>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># First we read the preprocessed data as a single MuData object
@@ -495,7 +497,7 @@ mdata
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
 </pre></div>
 </div>
 <div class="output_area rendered_html docutils container">
@@ -542,7 +544,7 @@ mdata
 <p>The mdata object contains 12 data modalities and the obs slot contains metadata of the cell lines. We will use RNA, Protein, Methylation and Drug response as the multi-omics data input for <code class="docutils literal notranslate"><span class="pre">SOFA</span></code>. We will use the modalities Growth (the growth rate of the cell lines), MSI (microsatellite instability status), BRAF (whether the cell line is mutated in BRAF), TP53 (whether the cell line is mutated in TP53), PIK3CA (whether the cell line is mutated in PIK3CA) and Hema (whether the cell line is from
 the hematopoietic lineage) as guiding variables. The modalities Mutations and CRISPR scores will be used in the downstream analysis, to test for significant associations with factors.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># We create the MuData object Xmdata, which contains the multi-omics data:
@@ -556,7 +558,7 @@ Ymdata = MuData({&quot;Growth&quot;:mdata[&quot;Growth&quot;], &quot;MSI&quot;: 
 <h3>(Optional for this Tutorial) here we will show how you would prepare the input data for SOFA yourself<a class="headerlink" href="#(Optional-for-this-Tutorial)-here-we-will-show-how-you-would-prepare-the-input-data-for-SOFA-yourself" title="Permalink to this headline"></a></h3>
 <p>We assume that you have a <code class="docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code> for each of the data modalities.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># Extract dataframes from the `MuData` object
@@ -569,7 +571,7 @@ drug_df = mdata[&quot;Drug response&quot;].to_df()
 </div>
 <p>Then we can use the sofa.tl.get_ad() function to produce an appropriate <code class="docutils literal notranslate"><span class="pre">AnnData</span></code> object.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>rna_ad = sofa.tl.get_ad(rna_df, llh = &quot;gaussian&quot;) # currently only the Gaussian likelihood is supported for the omics data
@@ -583,7 +585,7 @@ Xmdata = MuData({&quot;RNA&quot;:rna_ad, &quot;Protein&quot;:prot_ad, &quot;Meth
 </div>
 <p>and analogously for the guiding variables:</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>growth_df = mdata[&quot;Growth&quot;].to_df()
@@ -598,7 +600,7 @@ hema_df = mdata[&quot;Hema&quot;].to_df()
 <p>Again we can use the sofa.tl.get_ad() function to produce an appropriate <code class="docutils literal notranslate"><span class="pre">AnnData</span></code> object. We need to specify an appropriate likelihood for each guiding variables. For the continuous growth rate we use <code class="docutils literal notranslate"><span class="pre">gaussian</span></code> and for the remaining binary variables <code class="docutils literal notranslate"><span class="pre">bernoulli</span></code>. SOFA also supports the <code class="docutils literal notranslate"><span class="pre">categorical</span></code> likelihood. Additionally, we need to set a scaling factor for each guiding variables, determining the strength of the supervision in the fitting process. To high values lead to guided
 factors that do not explain any variance of the multi-omics data. Too low values would lead to factors that are not associated with their guiding variables. We recommend the default of 0.1.</p>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>growth_ad = sofa.tl.get_ad(growth_df, llh = &quot;gaussian&quot;, scaling_factor = 0.01)
@@ -614,7 +616,7 @@ Ymdata = MuData({&quot;Growth&quot;:growth_ad, &quot;MSI&quot;: msi_ad, &quot;BR
 </div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[40]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># We set the number of factors to infer
@@ -635,7 +637,7 @@ design
 </div>
 </div>
 <div class="nboutput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[40]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -659,7 +661,7 @@ tensor([[1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
 <section id="Fit-the-SOFA-model">
 <h2>Fit the <code class="docutils literal notranslate"><span class="pre">SOFA</span></code> model<a class="headerlink" href="#Fit-the-SOFA-model" title="Permalink to this headline"></a></h2>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>model = sofa.SOFA(Xmdata = Xmdata, # the input multi-omics data
@@ -671,8 +673,8 @@ tensor([[1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
 </pre></div>
 </div>
 </div>
-<div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># train SOFA with learning rate of 0.01 for 3000 steps
@@ -682,17 +684,8 @@ model.fit(n_steps=3000, lr=0.005)
 </pre></div>
 </div>
 </div>
-<div class="nboutput nblast docutils container">
-<div class="prompt empty docutils container">
-</div>
-<div class="output_area stderr docutils container">
-<div class="highlight"><pre>
-Current Elbo 3.69E+06 | Delta: 494761: 100%|██████████| 3000/3000 [05:01&lt;00:00,  9.94it/s]
-Current Elbo 2.61E+06 | Delta: -65210: 100%|██████████| 3000/3000 [04:43&lt;00:00, 10.58it/s]
-</pre></div></div>
-</div>
 <div class="nbinput nblast docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># if we would like to save the fitted model we can save it using:
@@ -710,7 +703,7 @@ model = sofa.tl.load_model(&quot;depmap_example_model&quot;)
 <h3>Convergence<a class="headerlink" href="#Convergence" title="Permalink to this headline"></a></h3>
 <p>We will first assess whether the ELBO loss of SOFA has converged by plotting it over training steps</p>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>plt.semilogy(model.history)
@@ -720,7 +713,7 @@ plt.ylabel(&quot;ELBO&quot;)
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
 </pre></div>
 </div>
 <div class="output_area docutils container">
@@ -850,7 +843,64 @@ sofa.pl.plot_factor_metadata_cor(model, metadata[[&quot;growth&quot;, &quot;msi_
 <img alt="../_images/notebooks_depmap_example_31_1.png" src="../_images/notebooks_depmap_example_31_1.png" />
 </div>
 </div>
-<p>As expected the guided factors a correlated with their respective guiding variables. The unguided factors are not correlated with the guiding variables.</p>
+<p>As expected the guided factors a correlated with their respective guiding variables. The unguided factors are not correlated with the guiding variables. Additionally we can check whether guided factors separate by their guiding variables:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[41]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>metadata= pd.concat((metadata, mdata.mod[&quot;Mutations&quot;].to_df()[[&quot;TP53&quot;, &quot;BRAF&quot;, &quot;PIK3CA&quot;]]), axis=1)
+indicator = pd.concat([
+    metadata.loc[:, [&#39;msi_status&#39;]].assign(binary=lambda df: df[&#39;msi_status&#39;].map({&#39;MSS&#39;: 0, &#39;MSI&#39;: 1}).astype(float)).assign(Factor=2).drop(columns=&#39;msi_status&#39;),
+    metadata.loc[:, [&#39;BRAF&#39;]].rename(columns={&#39;BRAF&#39;: &#39;binary&#39;}).assign(binary=lambda df: df[&#39;binary&#39;].astype(float)).assign(Factor=3),
+    metadata.loc[:, [&#39;TP53&#39;]].rename(columns={&#39;TP53&#39;: &#39;binary&#39;}).assign(binary=lambda df: df[&#39;binary&#39;].astype(float)).assign(Factor=4),
+    metadata.loc[:, [&#39;PIK3CA&#39;]].rename(columns={&#39;PIK3CA&#39;: &#39;binary&#39;}).assign(binary=lambda df: df[&#39;binary&#39;].astype(float)).assign(Factor=5),
+    metadata.loc[:, [&#39;hema/lymph&#39;]].assign(binary=lambda df: df[&#39;hema/lymph&#39;].map({&#39;other&#39;: 0, &#39;hematopoeitic&#39;: 1})).assign(binary=lambda df: df[&#39;binary&#39;].astype(float)).assign(Factor=6).drop(columns=&#39;hema/lymph&#39;)
+]
+).reset_index()
+
+factor_df = pd.DataFrame(model.Z, index=metadata.index, columns=[i for i in range(1, 21)])
+
+guided_factor_df = (factor_df
+ .reset_index()
+ .melt(&#39;index&#39;, var_name=&#39;Factor&#39;, value_name=&#39;Value&#39;)
+ .merge(indicator, on=[&#39;index&#39;, &#39;Factor&#39;])
+)
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[45]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>fig, ax = plt.subplots()
+p1 = (
+    so.Plot(guided_factor_df, x=&#39;Factor&#39;, y=&#39;Value&#39;, color=&#39;binary&#39;)
+    .add(so.Dot(pointsize=5),  so.Jitter(.3), legend=True)
+    .scale(color=so.Nominal())
+    .theme(axes_style(&quot;white&quot;))
+)
+
+p1.on(ax).plot() #.show()
+
+
+ax.set_title(&#39;Guided factors&#39;)
+ax.set_xticks(range(2,7))
+ax.set_ylabel(&quot;Factor value&quot;)
+ax.set_ylim(top=4)
+ax.spines[&#39;top&#39;].set_visible(False)
+ax.spines[&#39;right&#39;].set_visible(False)
+plt.tight_layout()
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_depmap_example_34_0.png" src="../_images/notebooks_depmap_example_34_0.png" />
+</div>
+</div>
+<p>Guided Factors clearly separate by their binary guiding variables, indicating that factor guidance worked.</p>
 </section>
 <section id="Downstream-analysis-of-the-factor-values">
 <h3>Downstream analysis of the factor values<a class="headerlink" href="#Downstream-analysis-of-the-factor-values" title="Permalink to this headline"></a></h3>
@@ -1216,7 +1266,7 @@ ax.legend(frameon=False, ncols=2, loc=&quot;center left&quot;,bbox_to_anchor=(1,
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_depmap_example_37_1.png" src="../_images/notebooks_depmap_example_37_1.png" />
+<img alt="../_images/notebooks_depmap_example_40_1.png" src="../_images/notebooks_depmap_example_40_1.png" />
 </div>
 </div>
 </section>
@@ -1792,7 +1842,7 @@ sofa.pl.plot_enrichment(top_loadings, # the top features
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_depmap_example_40_1.png" src="../_images/notebooks_depmap_example_40_1.png" />
+<img alt="../_images/notebooks_depmap_example_43_1.png" src="../_images/notebooks_depmap_example_43_1.png" />
 </div>
 </div>
 <div class="line-block">
@@ -1820,7 +1870,7 @@ sofa.pl.plot_enrichment(top_loadings, # the top features
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../_images/notebooks_depmap_example_42_1.png" src="../_images/notebooks_depmap_example_42_1.png" />
+<img alt="../_images/notebooks_depmap_example_45_1.png" src="../_images/notebooks_depmap_example_45_1.png" />
 </div>
 </div>
 </section>
