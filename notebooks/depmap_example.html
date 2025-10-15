@@ -1850,7 +1850,7 @@ sofa.pl.plot_enrichment(top_loadings, # the top features
 <div class="line">Additionally, we can also plot the top loadings weights:</div>
 </div>
 <div class="nbinput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>sofa.pl.plot_top_loadings(model, view=&quot;RNA&quot;, factor = 5, top_n=10, sign=&quot;-&quot;)
@@ -1858,8 +1858,7 @@ sofa.pl.plot_enrichment(top_loadings, # the top features
 </div>
 </div>
 <div class="nboutput docutils container">
-<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
-</pre></div>
+<div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
 <div class="highlight"><pre>
@@ -1871,6 +1870,31 @@ sofa.pl.plot_enrichment(top_loadings, # the top features
 </div>
 <div class="output_area docutils container">
 <img alt="../_images/notebooks_depmap_example_45_1.png" src="../_images/notebooks_depmap_example_45_1.png" />
+</div>
+</div>
+<p>If we omit the sign, the top absolute loading values are shown, in this case both positive and negative for Factor 3 (BRAF mutation)</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[55]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>sofa.pl.plot_top_loadings(model, view=&quot;RNA&quot;, factor = 3, top_n=20)
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[55]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;Axes: xlabel=&#39;Loadings&#39;, ylabel=&#39;Features&#39;&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_depmap_example_47_1.png" src="../_images/notebooks_depmap_example_47_1.png" />
 </div>
 </div>
 </section>
