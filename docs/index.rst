@@ -21,6 +21,7 @@ Welcome to SOFA's documentation!
    notebooks/installation
    notebooks/depmap_example
    notebooks/sc_multiome_example
+   notebooks/tcga_gyn_analysis
    
 
    
