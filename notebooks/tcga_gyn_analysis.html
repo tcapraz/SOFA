@@ -1,0 +1,1986 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analysis of TCGA data &mdash; spfa 0.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> spfa
+          </a>
+              <div class="version">
+                0.1.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">API:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../sofa.html">SOFA</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../plots.html">plots</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../utils.html">tools</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Tutorials:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="depmap_example.html">Analysis of DepMap data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sc_multiome_example.html">Analysis of a single-cell multiome data set</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">spfa</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Analysis of TCGA data</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/notebooks/tcga_gyn_analysis.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    /*background: #f5f5f5;*/
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+    margin: 0;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt .copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+.jp-RenderedHTMLCommon table,
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+.jp-RenderedHTMLCommon thead,
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+.jp-RenderedHTMLCommon tr,
+.jp-RenderedHTMLCommon th,
+.jp-RenderedHTMLCommon td,
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+.jp-RenderedHTMLCommon th,
+div.rendered_html th {
+  font-weight: bold;
+}
+.jp-RenderedHTMLCommon tbody tr:nth-child(odd),
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+.jp-RenderedHTMLCommon tbody tr:hover,
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># Install SOFA + dependencies
+!pip install --quiet biosofa
+</pre></div>
+</div>
+</div>
+<p>The input tcga_gyn_data.h5mu needs to be download from zenodo: <a class="reference external" href="https://zenodo.org/records/14761127">https://zenodo.org/records/14761127</a></p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>import sofa
+import torch
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+import seaborn as sns
+import matplotlib
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.linear_model import Lasso,  LinearRegression
+from sklearn.model_selection import cross_val_predict, cross_val_score
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_squared_error, make_scorer
+from muon import MuData
+from sklearn.manifold import TSNE
+import matplotlib.patches as mpatches
+import scanpy as sc
+import anndata as ad
+from anndata import AnnData
+import pickle
+import muon
+from lifelines import CoxPHFitter, KaplanMeierFitter
+from lifelines.statistics import logrank_test
+import statsmodels
+from matplotlib import colors as mp_colors
+from muon import MuData
+import muon as mu
+from decimal import Decimal
+from seaborn import axes_style
+from mofapy2.run.entry_point import entry_point
+import seaborn.objects as so
+from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable, make_axes_area_auto_adjustable
+from matplotlib.ticker import FormatStrFormatter
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/home/capraz/hubershare/anaconda3/envs/base_copy/lib/python3.8/site-packages/torch/onnx/_internal/_beartype.py:30: UserWarning: module &#39;beartype.roar&#39; has no attribute &#39;BeartypeDecorHintPep585DeprecationWarning&#39;
+  warnings.warn(f&#34;{e}&#34;)
+/home/capraz/hubershare/anaconda3/envs/base_copy/lib/python3.8/site-packages/umap/distances.py:1063: NumbaDeprecationWarning: The &#39;nopython&#39; keyword argument was not supplied to the &#39;numba.jit&#39; decorator. The implicit default value for this argument is currently False, but it will be changed to True in Numba 0.59.0. See https://numba.readthedocs.io/en/stable/reference/deprecation.html#deprecation-of-object-mode-fall-back-behaviour-when-using-jit for details.
+  @numba.jit()
+/home/capraz/hubershare/anaconda3/envs/base_copy/lib/python3.8/site-packages/umap/distances.py:1071: NumbaDeprecationWarning: The &#39;nopython&#39; keyword argument was not supplied to the &#39;numba.jit&#39; decorator. The implicit default value for this argument is currently False, but it will be changed to True in Numba 0.59.0. See https://numba.readthedocs.io/en/stable/reference/deprecation.html#deprecation-of-object-mode-fall-back-behaviour-when-using-jit for details.
+  @numba.jit()
+/home/capraz/hubershare/anaconda3/envs/base_copy/lib/python3.8/site-packages/umap/distances.py:1086: NumbaDeprecationWarning: The &#39;nopython&#39; keyword argument was not supplied to the &#39;numba.jit&#39; decorator. The implicit default value for this argument is currently False, but it will be changed to True in Numba 0.59.0. See https://numba.readthedocs.io/en/stable/reference/deprecation.html#deprecation-of-object-mode-fall-back-behaviour-when-using-jit for details.
+  @numba.jit()
+/home/capraz/hubershare/anaconda3/envs/base_copy/lib/python3.8/site-packages/umap/umap_.py:660: NumbaDeprecationWarning: The &#39;nopython&#39; keyword argument was not supplied to the &#39;numba.jit&#39; decorator. The implicit default value for this argument is currently False, but it will be changed to True in Numba 0.59.0. See https://numba.readthedocs.io/en/stable/reference/deprecation.html#deprecation-of-object-mode-fall-back-behaviour-when-using-jit for details.
+  @numba.jit()
+</pre></div></div>
+</div>
+<section id="Analysis-of-TCGA-data">
+<h1>Analysis of TCGA data<a class="headerlink" href="#Analysis-of-TCGA-data" title="Permalink to this headline"></a></h1>
+<section id="Introduction">
+<h2>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this headline"></a></h2>
+<p>In this notebook we will explore how <code class="docutils literal notranslate"><span class="pre">SOFA</span></code> can be used to analyze multi-omics data from the TCGA <a class="reference external" href="#1">[1]</a>. Here we give a brief introduction what the SOFA model does and what it can be used for. For a more detailed description please refer to our preprint: <a class="reference external" href="https://doi.org/10.1101/2024.10.10.617527">https://doi.org/10.1101/2024.10.10.617527</a></p>
+<section id="The-SOFA-model">
+<h3>The SOFA model<a class="headerlink" href="#The-SOFA-model" title="Permalink to this headline"></a></h3>
+<p>Given a set of real-valued data matrices containing multi-omic measurements from overlapping samples (also called views), along with sample-level guiding variables that capture additional properties such as batches or mutational profiles, SOFA extracts an interpretable lower-dimensional data representation, consisting of a shared factor matrix and modality-specific loading matrices. The goal of these factors is to explain the major axes of variation in the data. SOFA explicitly assigns a subset
+of factors to explain both the multi-omics data and the guiding variables (guided factors), while preserving another subset of factors exclusively for explaining the multi-omics data (unguided factors). Importantly, this feature allows the analyst to discern variation that is driven by known sources from novel, unexplained sources of variability.</p>
+<section id="Interpretation-of-the-factors-(Z)">
+<h4>Interpretation of the factors (Z)<a class="headerlink" href="#Interpretation-of-the-factors-(Z)" title="Permalink to this headline"></a></h4>
+<p>Analogous to the interpretation of factors in PCA, SOFA factors ordinate samples along a zero-centered axis, where samples with opposing signs exhibit contrasting phenotypes along the inferred axis of variation, and the absolute value of the factor indicates the strength of the phenotype. Importantly, SOFA partitions the factors of the low-rank decomposition into guided and unguided factors: the guided factors are linked to specific guiding variables, while the unguided factors capture global,
+yet unexplained, sources of variability in the data. The factor values can be used in downstream analysis tasks related to the samples, such as clustering or survival analysis. The factor values are called Z in SOFA.</p>
+</section>
+<section id="Interpretation-of-the-loading-weights-(W)">
+<h4>Interpretation of the loading weights (W)<a class="headerlink" href="#Interpretation-of-the-loading-weights-(W)" title="Permalink to this headline"></a></h4>
+<p>SOFA’s loading weights indicate the importance of each feature for its respective factor, thereby enabling the interpretation of SOFA factors. Loading weights close to zero indicate that a feature has little to no importance for the respective factor, while large magnitudes suggest strong relevance. The sign of the loading weight aligns with its corresponding factor, meaning that positive loading weights indicate higher feature levels in samples with positive factor values, and negative loading
+weights indicate higher feature levels in samples with negative factor values. The top loading weights can be simply inspected or used in downstream analysis such as gene set enrichment analysis. The factor values are called W in SOFA.</p>
+</section>
+<section id="Supported-data">
+<h4>Supported data<a class="headerlink" href="#Supported-data" title="Permalink to this headline"></a></h4>
+<p>SOFA expects a set of matrices containing omics measurements with matching and aligned samples and different features. Currently SOFA only supports Gaussian likelihoods, for the multi-omics data. Data should therefore be appropriately normalized according to its omics modality. Additionally, data should be centered and scaled.</p>
+<p>For the guiding variables SOFA supports Gaussian, Bernoulli and Categorical likelihoods. Guiding variables can therefore be continuous, binary or categorical. Guiding variables should be vectors with matching samples with the multi-omics data.</p>
+<p>In SOFA the multi-omics data is denoted as X and the guiding variables as Y.</p>
+</section>
+</section>
+<section id="The-TCGA-data-set">
+<h3>The TCGA data set<a class="headerlink" href="#The-TCGA-data-set" title="Permalink to this headline"></a></h3>
+<p>The pan-gynecologic cancer multi-omic data set of the cancer genome atlas (TCGA) project<a class="reference external" href="#1">[1]</a>, consists of measurements from the transcriptome (mRNA), proteome, methylome, and miRNA of 2599 samples from five different cancers. Additionally, the study includes data about mutations, metadata, and clinical endpoints progression free interval (PFI) and overall survival (OS). We used SOFA to infer 12 latent factors and guided the first 5 factors with the 5 cancer type labels form gynecologic
+cancers. We hypothesized that the remaining unguided factors will capture cancer type independent variation.</p>
+</section>
+<section id="References">
+<h3>References<a class="headerlink" href="#References" title="Permalink to this headline"></a></h3>
+<p>[1] Cancer Genome Atlas Research Network et al. The Cancer Genome Atlas Pan-Cancer analysis project. Nat. Genet. 45, 1113–1120 (2013).</p>
+</section>
+</section>
+<section id="Read-data-and-set-hyperparameters">
+<h2>Read data and set hyperparameters<a class="headerlink" href="#Read-data-and-set-hyperparameters" title="Permalink to this headline"></a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># First we read the preprocessed data as a single MuData object
+mdata = mu.read(&quot;data/tcga/tcga_gyn_data.h5mu&quot;)
+mdata
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[3]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<pre>MuData object with n_obs × n_vars = 2599 × 8926
+  obs:      &#x27;admin.disease_code&#x27;, &#x27;Unnamed: 0&#x27;, &#x27;type&#x27;, &#x27;age_at_initial_pathologic_diagnosis&#x27;, &#x27;gender&#x27;, &#x27;race&#x27;, &#x27;ajcc_pathologic_tumor_stage&#x27;, &#x27;clinical_stage&#x27;, &#x27;histological_type&#x27;, &#x27;histological_grade&#x27;, &#x27;initial_pathologic_dx_year&#x27;, &#x27;menopause_status&#x27;, &#x27;birth_days_to&#x27;, &#x27;vital_status&#x27;, &#x27;tumor_status&#x27;, &#x27;last_contact_days_to&#x27;, &#x27;death_days_to&#x27;, &#x27;cause_of_death&#x27;, &#x27;new_tumor_event_type&#x27;, &#x27;new_tumor_event_site&#x27;, &#x27;new_tumor_event_site_other&#x27;, &#x27;new_tumor_event_dx_days_to&#x27;, &#x27;treatment_outcome_first_course&#x27;, &#x27;margin_status&#x27;, &#x27;residual_tumor&#x27;, &#x27;OS&#x27;, &#x27;OS.time&#x27;, &#x27;DSS&#x27;, &#x27;DSS.time&#x27;, &#x27;DFI&#x27;, &#x27;DFI.time&#x27;, &#x27;PFI&#x27;, &#x27;PFI.time&#x27;, &#x27;Redaction&#x27;
+  10 modalities
+    RNA:    2599 x 4436
+      uns:  &#x27;llh&#x27;, &#x27;log1p&#x27;
+      obsm: &#x27;mask&#x27;
+    Protein:        2599 x 183
+      uns:  &#x27;llh&#x27;
+      obsm: &#x27;mask&#x27;
+    Methylation:    2599 x 3436
+      uns:  &#x27;llh&#x27;, &#x27;log1p&#x27;
+      obsm: &#x27;mask&#x27;
+    miRNA:  2599 x 680
+      uns:  &#x27;llh&#x27;, &#x27;log1p&#x27;
+      obsm: &#x27;mask&#x27;
+    Mutations:      2599 x 186
+      uns:  &#x27;llh&#x27;
+      obsm: &#x27;mask&#x27;
+    brca:   2599 x 1
+      uns:  &#x27;llh&#x27;, &#x27;scaling_factor&#x27;
+      obsm: &#x27;mask&#x27;
+    cesc:   2599 x 1
+      uns:  &#x27;llh&#x27;, &#x27;scaling_factor&#x27;
+      obsm: &#x27;mask&#x27;
+    ov:     2599 x 1
+      uns:  &#x27;llh&#x27;, &#x27;scaling_factor&#x27;
+      obsm: &#x27;mask&#x27;
+    ucec:   2599 x 1
+      uns:  &#x27;llh&#x27;, &#x27;scaling_factor&#x27;
+      obsm: &#x27;mask&#x27;
+    ucs:    2599 x 1
+      uns:  &#x27;llh&#x27;, &#x27;scaling_factor&#x27;
+      obsm: &#x27;mask&#x27;</pre></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># We create the MuData object Xmdata, which contains the multi-omics data:
+Xmdata = MuData({&quot;RNA&quot;:mdata[&quot;RNA&quot;], &quot;Protein&quot;:mdata[&quot;Protein&quot;], &quot;Methylation&quot;:mdata[&quot;Methylation&quot;], &quot;miRNA&quot;:mdata[&quot;miRNA&quot;]})
+# We create the MuData objectYmdata, which contains the guiding variables:
+Ymdata = MuData({&quot;BRCA&quot;:mdata[&quot;brca&quot;], &quot;CESC&quot;: mdata[&quot;cesc&quot;], &quot;OV&quot;: mdata[&quot;ov&quot;], &quot;UCEC&quot;:mdata[&quot;ucec&quot;], &quot;UCS&quot;:mdata[&quot;ucs&quot;]})
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># We set the number of factors to infer
+num_factors = 12
+# Use obs as metadata of the cell lines
+metadata = mdata.obs
+# In order to relate factors to guiding variables we need to provide a design matrix (guiding variables x number of factors)
+# indicating which factor is guided by which guiding variable.
+# Here we just indicate that the first 5 factors are each guided by a different guiding variable:
+design = np.zeros((len(Ymdata.mod), num_factors))
+for i in range(len(Ymdata.mod)):
+    design[i,i] = 1
+
+# convert to torch tensor to make it usable by SOFA
+design = torch.tensor(design)
+design
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+tensor([[1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+        [0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+        [0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0., 0.],
+        [0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0., 0.],
+        [0., 0., 0., 0., 1., 0., 0., 0., 0., 0., 0., 0.]], dtype=torch.float64)
+</pre></div></div>
+</div>
+</section>
+<section id="Fit-the-SOFA-model">
+<h2>Fit the <code class="docutils literal notranslate"><span class="pre">SOFA</span></code> model<a class="headerlink" href="#Fit-the-SOFA-model" title="Permalink to this headline"></a></h2>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>model = sofa.SOFA(Xmdata = Xmdata, # the input multi-omics data
+              num_factors=num_factors, # number of factors to infer
+              Ymdata = Ymdata, # the input guiding variables
+              design = design, # design matrix relating factors to guiding variables
+              device=&#39;cuda&#39;, # set device to &quot;cuda&quot; to enable computation on the GPU, if you don&#39;t have a GPU available set it to &quot;cpu&quot;
+              seed=42) # set seed to get the same results every time we run it
+# train SOFA with learning rate of 0.01 for 3000 steps
+model.fit(n_steps=6000, lr=0.01, predict=False)
+# decrease learning rate to 0.005 and continue training
+model.fit(n_steps=3000, lr=0.005)
+models.append(model)
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+Current Elbo 1.40E+07 | Delta: 11086: 100%|██████████| 6000/6000 [13:03&lt;00:00,  7.66it/s]
+Current Elbo 1.39E+07 | Delta: 5385: 100%|██████████| 3000/3000 [12:36&lt;00:00,  3.97it/s]
+Current Elbo 1.39E+07 | Delta: 13180: 100%|██████████| 6000/6000 [25:08&lt;00:00,  3.98it/s]
+Current Elbo 1.38E+07 | Delta: 1659: 100%|██████████| 3000/3000 [12:33&lt;00:00,  3.98it/s]
+Current Elbo 1.39E+07 | Delta: 5138: 100%|██████████| 6000/6000 [25:13&lt;00:00,  3.97it/s]
+Current Elbo 1.38E+07 | Delta: -2798: 100%|██████████| 3000/3000 [12:33&lt;00:00,  3.98it/s]
+Current Elbo 1.38E+07 | Delta: 17196: 100%|██████████| 6000/6000 [25:07&lt;00:00,  3.98it/s]
+Current Elbo 1.38E+07 | Delta: -4738: 100%|██████████| 3000/3000 [12:35&lt;00:00,  3.97it/s]
+</pre></div></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># if we would like to save the fitted model we can save it using:
+#sofa.tl.save_model(model,&quot;models/model_name&quot;)
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># load fitted model to exactly reproduce manuscript figures
+# to load the model use:
+model = sofa.tl.load_model(&quot;models/tcga_gyn_model&quot;)
+</pre></div>
+</div>
+</div>
+</section>
+<section id="Downstream-analysis">
+<h2>Downstream analysis<a class="headerlink" href="#Downstream-analysis" title="Permalink to this headline"></a></h2>
+<section id="Convergence">
+<h3>Convergence<a class="headerlink" href="#Convergence" title="Permalink to this headline"></a></h3>
+<p>We will first assess whether the ELBO loss of SOFA has converged by plotting it over training steps</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>plt.semilogy(model.history)
+plt.xlabel(&quot;Training steps&quot;)
+plt.ylabel(&quot;ELBO&quot;)
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Text(0, 0.5, &#39;ELBO&#39;)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_tcga_gyn_analysis_13_1.png" src="../_images/notebooks_tcga_gyn_analysis_13_1.png" />
+</div>
+</div>
+</section>
+<section id="Variance-explained">
+<h3>Variance explained<a class="headerlink" href="#Variance-explained" title="Permalink to this headline"></a></h3>
+<p>A good first step in a SOFA analysis is to plot how much variance is explained by each factor for each modality. This gives us an overview which factors are active across multiple modalities, capturing correlated variation across multiple measurements and which are private to a single modality, most probably capturing technical effects related to this modality.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>sofa.pl.plot_variance_explained(model)
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;Axes: xlabel=&#39;View&#39;, ylabel=&#39;Factor&#39;&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_tcga_gyn_analysis_15_1.png" src="../_images/notebooks_tcga_gyn_analysis_15_1.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># We can also plot how much variance of each view is explained
+sofa.pl.plot_variance_explained_view(model)
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;Axes: xlabel=&#39;View&#39;, ylabel=&#39;R2&#39;&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_tcga_gyn_analysis_16_1.png" src="../_images/notebooks_tcga_gyn_analysis_16_1.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># or how much variance is explained by each factor in total
+sofa.pl.plot_variance_explained_factor(model)
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/home/capraz/hubershare/SOFA/sofa/plots/plots.py:220: UserWarning: FixedFormatter should only be used together with FixedLocator
+  ax.set_xticklabels(x_labels,rotation=90)
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;Axes: xlabel=&#39;View&#39;, ylabel=&#39;R2&#39;&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_tcga_gyn_analysis_17_2.png" src="../_images/notebooks_tcga_gyn_analysis_17_2.png" />
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[39]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>from sklearn.metrics.pairwise import cosine_similarity
+cos_sim_matrix = cosine_similarity(model.W[0])
+angle_matrix_rad = np.arccos(np.clip(cos_sim_matrix, -1.0, 1.0))  # in radians
+angle_matrix_deg = np.abs(np.degrees(angle_matrix_rad) )
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[43]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>flabels = [&quot;Factor 1 (brca)&quot;,&quot;Factor 2 (cesc)&quot;,&quot;Factor 3 (ov)&quot;,&quot;Factor 4 (ucec)&quot;,&quot;Factor 5 (ucs)&quot;]+[f&#39;Factor {i}&#39; for i in range(6,13)]
+matplotlib.rcdefaults()
+plt.rc(&#39;axes&#39;, axisbelow=True)
+font = {
+        &#39;size&#39;   : 6}
+matplotlib.rc(&#39;font&#39;, **font)
+
+plt.figure(figsize=(3, 3))
+ax = sns.heatmap(
+    angle_matrix_deg,
+    cmap=&#39;RdBu&#39;,
+    vmin=0, vmax=180,
+    center=90,
+    annot=False, fmt=&quot;.1f&quot;,
+            xticklabels=[],
+            yticklabels=flabels,
+    square=True,
+    cbar_kws={&#39;label&#39;: &#39;Angle&#39;}
+)
+
+# Add a marker at 90° on the colorbar
+cbar = ax.collections[0].colorbar
+cbar.set_ticks([0, 30,60, 90, 120,150, 180])
+cbar.set_ticklabels([&#39;0°&#39;, &#39;30°&#39;,&#39;60°&#39;, &#39;90°&#39;, &#39;120°&#39;,&#39;150°&#39;,  &#39;180°&#39;])
+plt.tight_layout()
+plt.savefig(&quot;factor_angles_tcga.png&quot;, dpi=400)
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_tcga_gyn_analysis_19_0.png" src="../_images/notebooks_tcga_gyn_analysis_19_0.png" />
+</div>
+</div>
+</section>
+<section id="Check-factor-guidance">
+<h3>Check factor guidance<a class="headerlink" href="#Check-factor-guidance" title="Permalink to this headline"></a></h3>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>onc = OneHotEncoder()
+y = np.array(onc.fit_transform(mdata.obs[[&quot;admin.disease_code&quot;]]).todense())
+metadata_ = pd.concat((mdata.obs, pd.DataFrame(y, index=mdata.obs.index,columns=onc.categories_[0])), axis=1)
+metadata_[&quot;patientID&quot;] = metadata_.index
+<br/></pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>indicator = pd.concat([
+    metadata_.loc[:, [&#39;brca&#39;]].rename(columns={&#39;brca&#39;: &#39;binary&#39;}).assign(binary=lambda df: df[&#39;binary&#39;].astype(float)).assign(Factor=1),
+    metadata_.loc[:, [&#39;cesc&#39;]].rename(columns={&#39;cesc&#39;: &#39;binary&#39;}).assign(binary=lambda df: df[&#39;binary&#39;].astype(float)).assign(Factor=2),
+    metadata_.loc[:, [&#39;ov&#39;]].rename(columns={&#39;ov&#39;: &#39;binary&#39;}).assign(binary=lambda df: df[&#39;binary&#39;].astype(float)).assign(Factor=3),
+    metadata_.loc[:, [&#39;ucec&#39;]].rename(columns={&#39;ucec&#39;: &#39;binary&#39;}).assign(binary=lambda df: df[&#39;binary&#39;].astype(float)).assign(Factor=4),
+    metadata_.loc[:, [&#39;ucs&#39;]].rename(columns={&#39;ucs&#39;: &#39;binary&#39;}).assign(binary=lambda df: df[&#39;binary&#39;].astype(float)).assign(Factor=5),
+]
+).reset_index()
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[16]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>factor_df = pd.DataFrame(model.Z, index=metadata_.index, columns=[i for i in range(1, 13)])
+factor_df[&quot;patientID&quot;] = metadata_.index
+
+guided_factor_df = (factor_df
+ .reset_index()
+ .melt(&#39;index&#39;, var_name=&#39;Factor&#39;, value_name=&#39;Value&#39;)
+ .merge(indicator, on=[&#39;index&#39;, &#39;Factor&#39;])
+
+)
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>fig, ax = plt.subplots()
+p1 = (
+    so.Plot(guided_factor_df, x=&#39;Factor&#39;, y=&#39;Value&#39;, color=&#39;binary&#39;)
+    .add(so.Dot(pointsize=0.5),  so.Jitter(.3), legend=False)
+    .scale(color=[&#39;#56b4e9&#39;, &#39;#d55e00&#39;])
+    .theme(axes_style(&quot;white&quot;))
+    # .layout(engine=&quot;constrained&quot;)
+)
+# used to be B
+p1.on(ax).plot() #.show()
+ax.set_title(&#39;Guided factors&#39;)
+ax.set_ylabel(&#39;Factor value&#39;)
+ax.set_ylim(top=4)
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+(-4.4366262555122375, 4.0)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_tcga_gyn_analysis_24_1.png" src="../_images/notebooks_tcga_gyn_analysis_24_1.png" />
+</div>
+</div>
+</section>
+<section id="Downstream-analysis-of-the-factor-values">
+<h3>Downstream analysis of the factor values<a class="headerlink" href="#Downstream-analysis-of-the-factor-values" title="Permalink to this headline"></a></h3>
+<p>The factor values represent the new coordinates in lower dimensional space of our samples and have dimensions samples x factors. The factor values called Z in SOFA. We can use the factor values for all kinds of downstream analyses on the sample level. Here we will cluster the unguided factors.</p>
+<p>We first retrieve the factor values:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>Z = sofa.tl.get_factors(model)
+Z
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Factor_1 (brca)</th>
+      <th>Factor_2 (cesc)</th>
+      <th>Factor_3 (ov)</th>
+      <th>Factor_4 (ucec)</th>
+      <th>Factor_5 (ucs)</th>
+      <th>Factor_6</th>
+      <th>Factor_7</th>
+      <th>Factor_8</th>
+      <th>Factor_9</th>
+      <th>Factor_10</th>
+      <th>Factor_11</th>
+      <th>Factor_12</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>TCGA-A1-A0SB</th>
+      <td>-0.068559</td>
+      <td>-0.956759</td>
+      <td>0.395876</td>
+      <td>0.353804</td>
+      <td>-0.449537</td>
+      <td>-0.244394</td>
+      <td>-0.489684</td>
+      <td>0.234003</td>
+      <td>0.364860</td>
+      <td>-0.349728</td>
+      <td>-0.021216</td>
+      <td>0.583005</td>
+    </tr>
+    <tr>
+      <th>TCGA-A1-A0SD</th>
+      <td>-0.791113</td>
+      <td>-0.176194</td>
+      <td>0.162773</td>
+      <td>0.077882</td>
+      <td>0.022851</td>
+      <td>0.090326</td>
+      <td>0.110678</td>
+      <td>0.036941</td>
+      <td>0.281851</td>
+      <td>-0.163649</td>
+      <td>-0.056130</td>
+      <td>0.102763</td>
+    </tr>
+    <tr>
+      <th>TCGA-A1-A0SE</th>
+      <td>-0.649877</td>
+      <td>-0.516037</td>
+      <td>0.241078</td>
+      <td>0.019738</td>
+      <td>0.355230</td>
+      <td>0.079890</td>
+      <td>-0.057455</td>
+      <td>0.151067</td>
+      <td>0.365583</td>
+      <td>-0.202970</td>
+      <td>-0.646631</td>
+      <td>0.212070</td>
+    </tr>
+    <tr>
+      <th>TCGA-A1-A0SF</th>
+      <td>-0.436990</td>
+      <td>-0.397665</td>
+      <td>0.262103</td>
+      <td>-0.131475</td>
+      <td>0.457887</td>
+      <td>0.311861</td>
+      <td>0.133225</td>
+      <td>0.461349</td>
+      <td>0.154909</td>
+      <td>-0.215308</td>
+      <td>0.080673</td>
+      <td>0.108758</td>
+    </tr>
+    <tr>
+      <th>TCGA-A1-A0SG</th>
+      <td>-0.796272</td>
+      <td>-0.228161</td>
+      <td>0.087272</td>
+      <td>-0.005371</td>
+      <td>0.616239</td>
+      <td>0.122077</td>
+      <td>0.041294</td>
+      <td>0.088474</td>
+      <td>0.196174</td>
+      <td>-0.137173</td>
+      <td>-0.251898</td>
+      <td>-0.354120</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>TCGA-NF-A5CP</th>
+      <td>0.384871</td>
+      <td>0.149592</td>
+      <td>0.140378</td>
+      <td>0.200661</td>
+      <td>-1.616578</td>
+      <td>0.166475</td>
+      <td>0.342098</td>
+      <td>-0.267612</td>
+      <td>0.145394</td>
+      <td>0.229709</td>
+      <td>0.012862</td>
+      <td>-0.198812</td>
+    </tr>
+    <tr>
+      <th>TCGA-NG-A4VU</th>
+      <td>0.511174</td>
+      <td>-0.193516</td>
+      <td>0.299988</td>
+      <td>0.069122</td>
+      <td>-2.975001</td>
+      <td>-1.160977</td>
+      <td>0.002463</td>
+      <td>0.582547</td>
+      <td>0.403265</td>
+      <td>0.781878</td>
+      <td>-0.013149</td>
+      <td>-0.131417</td>
+    </tr>
+    <tr>
+      <th>TCGA-NG-A4VW</th>
+      <td>0.668518</td>
+      <td>0.125276</td>
+      <td>0.162740</td>
+      <td>0.090213</td>
+      <td>-1.621962</td>
+      <td>0.385436</td>
+      <td>-0.587095</td>
+      <td>0.180678</td>
+      <td>0.314375</td>
+      <td>0.189267</td>
+      <td>-0.081897</td>
+      <td>0.192156</td>
+    </tr>
+    <tr>
+      <th>TCGA-QM-A5NM</th>
+      <td>1.058689</td>
+      <td>0.071231</td>
+      <td>0.241933</td>
+      <td>-0.284919</td>
+      <td>-1.533058</td>
+      <td>0.279359</td>
+      <td>-0.279391</td>
+      <td>0.174577</td>
+      <td>0.358607</td>
+      <td>0.190392</td>
+      <td>0.053573</td>
+      <td>-0.531947</td>
+    </tr>
+    <tr>
+      <th>TCGA-QN-A5NN</th>
+      <td>0.386474</td>
+      <td>-0.215088</td>
+      <td>0.212471</td>
+      <td>-0.068811</td>
+      <td>-1.736867</td>
+      <td>-0.674749</td>
+      <td>0.190650</td>
+      <td>-0.281425</td>
+      <td>0.337099</td>
+      <td>0.273190</td>
+      <td>0.074353</td>
+      <td>-0.624181</td>
+    </tr>
+  </tbody>
+</table>
+<p>2599 rows × 12 columns</p>
+</div></div>
+</div>
+<p>We will plot a tSNE of all the factors and color them by cancer type and by Factor 10:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>tsne = TSNE()
+tsne_z = tsne.fit_transform(model.Z[:,5:])
+tsne_z_all = tsne.fit_transform(model.Z)
+metadata =mdata.obs
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>fig,ax = plt.subplots(ncols=2)
+
+include = metadata[&quot;admin.disease_code&quot;].astype(str) != &quot;nan&quot;
+tsne_z_ = tsne_z_all[include,:]
+cancer_types = metadata[&quot;admin.disease_code&quot;].loc[include]
+
+for ix, i in enumerate(np.unique(cancer_types.astype(str))):
+    ax[0].scatter(tsne_z_[cancer_types==i,0],tsne_z_[cancer_types==i,1],s = 1,alpha=0.6, c=sns.color_palette(&quot;colorblind&quot;, as_cmap=True)[ix], label=i)
+ax[0].set_aspect(&quot;equal&quot;)
+ax[0].spines[&#39;top&#39;].set_visible(False)
+ax[0].spines[&#39;right&#39;].set_visible(False)
+ax[0].spines[&#39;left&#39;].set_visible(False)
+ax[0].spines[&#39;bottom&#39;].set_visible(False)
+ax[0].set_xlabel(&quot;tSNE 1&quot;)
+ax[0].set_ylabel(&quot;tSNE 2&quot;)
+ax[0].tick_params(
+    axis=&#39;both&#39;,          # changes apply to the x-axis
+    which=&#39;both&#39;,      # both major and minor ticks are affected
+    bottom=False,      # ticks along the bottom edge are off
+    top=False,
+    left=False,# ticks along the top edge are off
+    labelbottom=False,
+labelleft=False,) # labels along the bottom edge are off
+
+
+divnorm=mp_colors.TwoSlopeNorm(vmin=-1, vcenter=0, vmax=1)
+plot = ax[1].scatter(tsne_z_all[:,0],tsne_z_all[:,1],s = 1,alpha=1, c=model.Z[:,9],cmap=&quot;RdBu&quot;, norm=divnorm)
+ax[1].set_aspect(&quot;equal&quot;)
+#plt.colorbar(plot)
+divider = make_axes_locatable(ax[1])
+cax = divider.append_axes(&quot;right&quot;, size=&quot;5%&quot;, pad=0.05)
+plt.colorbar(plot, cax=cax, label=&quot;Factor 10&quot;)
+ax[1].spines[&#39;top&#39;].set_visible(False)
+ax[1].spines[&#39;right&#39;].set_visible(False)
+ax[1].spines[&#39;left&#39;].set_visible(False)
+ax[1].spines[&#39;bottom&#39;].set_visible(False)
+ax[1].set_xlabel(&quot;tSNE 1&quot;)
+ax[1].set_ylabel(&quot;tSNE 2&quot;)
+ax[1].tick_params(
+    axis=&#39;both&#39;,          # changes apply to the x-axis
+    which=&#39;both&#39;,      # both major and minor ticks are affected
+    bottom=False,      # ticks along the bottom edge are off
+    top=False,
+    left=False,# ticks along the top edge are off
+    labelbottom=False,
+labelleft=False,) # labels along the bottom edge are off
+<br/><br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_tcga_gyn_analysis_29_0.png" src="../_images/notebooks_tcga_gyn_analysis_29_0.png" />
+</div>
+</div>
+<p>We will plot a tSNE of only the unguided factors and color them by cancer type and by Factor 10:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>fig,ax = plt.subplots(ncols=2)
+
+include = metadata[&quot;admin.disease_code&quot;].astype(str) != &quot;nan&quot;
+tsne_z_ = tsne_z[include,:]
+cancer_types = metadata[&quot;admin.disease_code&quot;].loc[include]
+
+for ix, i in enumerate(np.unique(cancer_types.astype(str))):
+    ax[0].scatter(tsne_z_[cancer_types==i,0],tsne_z_[cancer_types==i,1],s = 1,alpha=0.6, c=sns.color_palette(&quot;colorblind&quot;, as_cmap=True)[ix], label=i)
+ax[0].set_aspect(&quot;equal&quot;)
+ax[0].spines[&#39;top&#39;].set_visible(False)
+ax[0].spines[&#39;right&#39;].set_visible(False)
+ax[0].spines[&#39;left&#39;].set_visible(False)
+ax[0].spines[&#39;bottom&#39;].set_visible(False)
+ax[0].set_xlabel(&quot;tSNE 1&quot;)
+ax[0].set_ylabel(&quot;tSNE 2&quot;)
+ax[0].tick_params(
+    axis=&#39;both&#39;,          # changes apply to the x-axis
+    which=&#39;both&#39;,      # both major and minor ticks are affected
+    bottom=False,      # ticks along the bottom edge are off
+    top=False,
+    left=False,# ticks along the top edge are off
+    labelbottom=False,
+labelleft=False,) # labels along the bottom edge are off
+
+
+divnorm=mp_colors.TwoSlopeNorm(vmin=-1, vcenter=0, vmax=1)
+plot = ax[1].scatter(tsne_z_[:,0],tsne_z_[:,1],s = 1,alpha=1, c=model.Z[:,9],cmap=&quot;RdBu&quot;, norm=divnorm)
+ax[1].set_aspect(&quot;equal&quot;)
+#plt.colorbar(plot)
+divider = make_axes_locatable(ax[1])
+cax = divider.append_axes(&quot;right&quot;, size=&quot;5%&quot;, pad=0.05)
+plt.colorbar(plot, cax=cax, label=&quot;Factor 10&quot;)
+ax[1].spines[&#39;top&#39;].set_visible(False)
+ax[1].spines[&#39;right&#39;].set_visible(False)
+ax[1].spines[&#39;left&#39;].set_visible(False)
+ax[1].spines[&#39;bottom&#39;].set_visible(False)
+ax[1].set_xlabel(&quot;tSNE 1&quot;)
+ax[1].set_ylabel(&quot;tSNE 2&quot;)
+ax[1].tick_params(
+    axis=&#39;both&#39;,          # changes apply to the x-axis
+    which=&#39;both&#39;,      # both major and minor ticks are affected
+    bottom=False,      # ticks along the bottom edge are off
+    top=False,
+    left=False,# ticks along the top edge are off
+    labelbottom=False,
+labelleft=False,) # labels along the bottom edge are off
+<br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_tcga_gyn_analysis_31_0.png" src="../_images/notebooks_tcga_gyn_analysis_31_0.png" />
+</div>
+</div>
+<p>As we can see from the tSNE of only the unguided factors, the cancer type information is regressed from the latent space. To quantify the how much of the cancer label information was regressed out. We performed multiple SOFA runs guided by cancer labels and fully unguided “null” models. Then calculated the ARI for the cancer type labels on either all, only the unguided factors or the fully unguided latent space.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>stats = pd.read_csv(&quot;data/tcga/pan_gyn_integrations_stats.csv&quot;, index_col=0)
+stats = stats.dropna(axis=1)
+stats = stats[np.sort(stats.columns)]
+ari = stats.iloc[:,0:4]
+ari.columns =[&quot;Guided model&quot;, &quot;Only unguided factors&quot;, &quot;Null model rank 12&quot;, &quot;Null model rank 7&quot;]
+
+fig,ax = plt.subplots()
+ax.bar(ari.columns, height=np.mean(ari,axis=0),yerr=np.std(ari,axis=0),capsize=4)
+ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
+ax.set_ylabel(&quot;Adjusted Rand Index&quot;)
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/tmp/ipykernel_1014/412390681.py:9: UserWarning: FixedFormatter should only be used together with FixedLocator
+  ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Text(0, 0.5, &#39;Adjusted Rand Index&#39;)
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_tcga_gyn_analysis_33_2.png" src="../_images/notebooks_tcga_gyn_analysis_33_2.png" />
+</div>
+</div>
+<section id="Survival-analysis-with-SOFA-factors">
+<h4>Survival analysis with SOFA factors<a class="headerlink" href="#Survival-analysis-with-SOFA-factors" title="Permalink to this headline"></a></h4>
+<p>Here we test whether the inferred SOFA factors are associated with overall survival (OS) or progression free survival (PFI). We use univariate Cox regression for each factor individually.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[23]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># get overall survival data
+OS  = mdata.obs[[&quot;OS&quot;, &quot;OS.time&quot;]].astype(float)
+# get progression free interval data
+PFI  = mdata.obs[[&quot;PFI&quot;, &quot;PFI.time&quot;]].astype(float)
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[24]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>Z_pred = model.Z.copy()
+# flip sign of factor 3 and 5
+Z_pred[:,2] = Z_pred[:,2]*-1
+Z_pred[:,4] = Z_pred[:,4]*-1
+
+# output df
+OS_cox = pd.DataFrame(columns=[&quot;factor&quot;, &quot;hazard_ratios&quot;,&quot;lower&quot;, &quot;upper&quot;, &quot;pvalues&quot;], index=range(Z_pred.shape[1]))
+
+for i in range(Z_pred.shape[1]):
+
+    cph = CoxPHFitter()
+
+    cox_data = OS
+    factor = pd.Series(Z_pred[:,i], index=cox_data.index)
+
+    d= pd.concat((cox_data, factor), axis=1)
+
+    d= d[~d.isna().any(axis=1)]
+    cph.fit(d, duration_col = &#39;OS.time&#39;, event_col = &quot;OS&quot;)
+    OS_cox.loc[i,&quot;pvalues&quot;] = cph.summary[&quot;p&quot;][0]
+    OS_cox.loc[i,&quot;hazard_ratios&quot;] = cph.summary[&quot;exp(coef)&quot;][0]
+    OS_cox.loc[i,&quot;lower&quot;] = cph.summary[&quot;exp(coef) lower 95%&quot;][0]
+    OS_cox.loc[i,&quot;upper&quot;] = cph.summary[&quot;exp(coef) upper 95%&quot;][0]
+    OS_cox.loc[i,&quot;factor&quot;] = &quot;Factor &quot;+str(i+1)
+</pre></div>
+</div>
+</div>
+<p>Here we visualize the fitted coefficients (hazard ratios) and p-values to identify which factors are associated with survival.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># plot forest plot with hazard ratios and confidence interval
+import statsmodels.api as sm
+fig,ax = plt.subplots()
+ci = pd.concat((OS_cox[&quot;hazard_ratios&quot;]-OS_cox[&quot;lower&quot;], OS_cox[&quot;upper&quot;]-OS_cox[&quot;hazard_ratios&quot;]), axis=1).T
+OS_cox[&quot;padj&quot;] = statsmodels.stats.multitest.multipletests(OS_cox[&quot;pvalues&quot;].astype(float))[1]
+pvals = [&quot;P=&quot; + np.format_float_scientific(i,precision=2)for i in OS_cox[&quot;padj&quot;].values]
+sig = OS_cox[&quot;padj&quot;].values &lt; 0.01
+nonsig = OS_cox[&quot;padj&quot;].values &gt;=0.01
+ax.errorbar(y=OS_cox[&quot;hazard_ratios&quot;][nonsig], x=OS_cox.index.values[nonsig]+0.5, yerr=ci.values[:,nonsig],
+            color=&#39;black&#39;,  capsize=5, linestyle=&#39;None&#39;, linewidth=1,
+            marker=&quot;o&quot;,  mfc=&quot;black&quot;, mec=&quot;black&quot;, label=&quot;adj. p-value &gt; 0.01&quot;)
+ax.errorbar(y=OS_cox[&quot;hazard_ratios&quot;][sig], x=OS_cox.index.values[sig]+0.5, yerr=ci.values[:,sig],
+            color=&#39;black&#39;,  capsize=5, linestyle=&#39;None&#39;, linewidth=1,
+            marker=&quot;o&quot;,  mfc=&quot;#ff7f0e&quot;, mec=&quot;#ff7f0e&quot;, label=&quot;adj. p-value &lt; 0.01&quot;)
+ax.axhline(y=1, linewidth=0.8, linestyle=&#39;--&#39;, color=&#39;black&#39;)
+ax.tick_params(axis=&#39;x&#39;, which=&#39;minor&#39;,bottom=False)
+ax.set_ylabel(&#39;Hazard ratios \n(95% CI)&#39;)
+ax.set_xticks(ticks= np.arange(12)+0.5, labels=[&quot;Factor&quot; +str(i) for i in range(1,13)], rotation=90)
+
+nonsig_patch = mpatches.Patch(color=&#39;black&#39;, label=&quot;adj. p-value &gt; 0.01&quot;)
+sig_patch = mpatches.Patch(color=&#39;#ff7f0e&#39;, label=&quot;adj. p-value &lt; 0.01&quot;)
+
+ax.legend(handles=[nonsig_patch, sig_patch], frameon=False, ncols=2)
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[25]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;matplotlib.legend.Legend at 0x7f60d187f970&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_tcga_gyn_analysis_38_1.png" src="../_images/notebooks_tcga_gyn_analysis_38_1.png" />
+</div>
+</div>
+<p>Factor 10 is significantly associated with overall survival. We can further investigate its association to OS by plotting Kaplan-Meier curves:</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[26]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><br/><span></span>mask = ~OS.isna().any(axis=1)
+OS = OS.dropna()
+PFI = PFI.dropna()
+f10 = Z_pred[mask,9]
+</pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># plot Kaplan Meier curve for factor 10 and PFI
+
+low,high = np.percentile(f10, [50,95])
+
+fig,ax = plt.subplots()
+kmf = KaplanMeierFitter()
+results = logrank_test(PFI[&#39;PFI.time&#39;][f10&gt;high], PFI[&#39;PFI.time&#39;][f10&lt;low].dropna(), PFI[&#39;PFI&#39;][f10&gt;high], event_observed_B=PFI[&#39;PFI&#39;][f10&lt;low].dropna())
+kmf.fit(PFI[&#39;PFI.time&#39;][f10&gt;high], PFI[&#39;PFI&#39;][f10&gt;high], label=&quot;Factor 10 high&quot;)
+kmf.plot(ax=ax,ci_show=False)
+kmf = KaplanMeierFitter()
+kmf.fit(PFI[&#39;PFI.time&#39;][f10&lt;low].dropna(), PFI[&#39;PFI&#39;][f10&lt;low].dropna(), label=&quot;Factor 10 low&quot;)
+kmf.plot(ax=ax,ci_show=False)
+ax.spines[&#39;top&#39;].set_visible(False)
+ax.spines[&#39;right&#39;].set_visible(False)
+
+ax.yaxis.set_tick_params(labelleft=True)
+ax.set_xlabel(&quot;Progression free interval \n(days)&quot;)
+ax.set_ylabel(&quot;Survival probability (%)&quot;)
+ax.text(1100, 0.9,  &quot;p-value = &quot;+&quot;%1.1E&quot; % Decimal(str(results.p_value)))
+ax.legend(frameon=False)
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[27]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;matplotlib.legend.Legend at 0x7f60d178aca0&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_tcga_gyn_analysis_41_1.png" src="../_images/notebooks_tcga_gyn_analysis_41_1.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># plot Kaplan Meier curve for factor 10 and OS
+
+fig,ax = plt.subplots()
+results = logrank_test(OS[&#39;OS.time&#39;][f10&gt;high], OS[&#39;OS.time&#39;][f10&lt;low].dropna(), OS[&#39;OS&#39;][f10&gt;high], event_observed_B=OS[&#39;OS&#39;][f10&lt;low].dropna())
+kmf = KaplanMeierFitter()
+
+kmf.fit(OS[&#39;OS.time&#39;][f10&gt;high].dropna(), OS[&#39;OS&#39;][f10&gt;high].dropna(), label=&quot;Factor 10 high&quot;)
+kmf.plot(ax=ax, ci_show=False)
+kmf = KaplanMeierFitter()
+kmf.fit(OS[&#39;OS.time&#39;][f10&lt;low].dropna(), OS[&#39;OS&#39;][f10&lt;low].dropna(), label=&quot;Factor 10 low&quot;)
+kmf.plot(ax=ax, ci_show=False, cmap=&quot;colorblind&quot;)
+ax.spines[&#39;top&#39;].set_visible(False)
+ax.spines[&#39;right&#39;].set_visible(False)
+ax.set_xlabel(&quot;Overall survival \n(days)&quot;)
+ax.text(1500, 0.9,  &quot;p-value = &quot;+&quot;%1.1E&quot; % Decimal(str(results.p_value)))
+
+ax.set_ylabel(&quot;Survival \n probability (%)&quot;, visible=True)
+ax.yaxis.set_major_formatter(FormatStrFormatter(&#39;%.1f&#39;))
+ax.yaxis.set_minor_formatter(FormatStrFormatter(&#39;%.1f&#39;))
+ax.legend(frameon=False)
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+/home/capraz/hubershare/anaconda3/envs/base_copy/lib/python3.8/site-packages/lifelines/plotting.py:919: UserWarning: &#39;color&#39; and &#39;colormap&#39; cannot be used simultaneously. Using &#39;color&#39;
+  dataframe_slicer(plot_estimate_config.estimate_).rename(columns=lambda _: plot_estimate_config.kwargs.pop(&#34;label&#34;)).plot(
+/home/capraz/hubershare/anaconda3/envs/base_copy/lib/python3.8/site-packages/lifelines/plotting.py:919: UserWarning: &#39;color&#39; and &#39;colormap&#39; cannot be used simultaneously. Using &#39;color&#39;
+  dataframe_slicer(plot_estimate_config.estimate_).rename(columns=lambda _: plot_estimate_config.kwargs.pop(&#34;label&#34;)).plot(
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[28]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;matplotlib.legend.Legend at 0x7f60cfedaf40&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_tcga_gyn_analysis_42_2.png" src="../_images/notebooks_tcga_gyn_analysis_42_2.png" />
+</div>
+</div>
+</section>
+</section>
+<section id="Downstream-analysis-of-loading-weights">
+<h3>Downstream analysis of loading weights<a class="headerlink" href="#Downstream-analysis-of-loading-weights" title="Permalink to this headline"></a></h3>
+<p>The loadings capture the importance of the features in each omics modality for each factor, they have dimensions: factors x features. To retrieve the loadings run:</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># specify the view of which we want to retrieve the loadings
+W = sofa.tl.get_loadings(model, view=&quot;rna&quot;)
+W
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[29]:
+</pre></div>
+</div>
+<div class="output_area rendered_html docutils container">
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>IGF2</th>
+      <th>DLK1</th>
+      <th>CYP17A1</th>
+      <th>APOE</th>
+      <th>SLPI</th>
+      <th>CYP11B1</th>
+      <th>STAR</th>
+      <th>H19</th>
+      <th>GNAS</th>
+      <th>GAPDH</th>
+      <th>...</th>
+      <th>LRRN4CL</th>
+      <th>SLC25A1</th>
+      <th>ARID5B</th>
+      <th>RHOQ</th>
+      <th>PDE6G</th>
+      <th>KIAA0664</th>
+      <th>FAM134A</th>
+      <th>PEX6</th>
+      <th>NARF</th>
+      <th>TRAF7</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>Factor_1 (brca)</th>
+      <td>0.256977</td>
+      <td>0.464854</td>
+      <td>0.425984</td>
+      <td>0.109858</td>
+      <td>1.112575</td>
+      <td>0.103872</td>
+      <td>0.529434</td>
+      <td>0.286809</td>
+      <td>0.498709</td>
+      <td>1.013466</td>
+      <td>...</td>
+      <td>0.367414</td>
+      <td>0.587168</td>
+      <td>0.027022</td>
+      <td>0.064519</td>
+      <td>0.255864</td>
+      <td>0.737403</td>
+      <td>-0.468108</td>
+      <td>0.264154</td>
+      <td>0.999687</td>
+      <td>0.338431</td>
+    </tr>
+    <tr>
+      <th>Factor_2 (cesc)</th>
+      <td>-0.371340</td>
+      <td>-0.627032</td>
+      <td>-0.278327</td>
+      <td>-0.231412</td>
+      <td>-0.320379</td>
+      <td>0.021412</td>
+      <td>-0.323378</td>
+      <td>-0.197620</td>
+      <td>-0.858876</td>
+      <td>-0.654136</td>
+      <td>...</td>
+      <td>-0.292036</td>
+      <td>-0.237705</td>
+      <td>-0.305694</td>
+      <td>-0.874484</td>
+      <td>-0.383729</td>
+      <td>-0.336187</td>
+      <td>-0.245804</td>
+      <td>-0.461135</td>
+      <td>-0.451547</td>
+      <td>-0.009286</td>
+    </tr>
+    <tr>
+      <th>Factor_3 (ov)</th>
+      <td>-0.558795</td>
+      <td>-0.102920</td>
+      <td>-1.380738</td>
+      <td>-0.295772</td>
+      <td>-0.245436</td>
+      <td>0.169791</td>
+      <td>-0.371026</td>
+      <td>-0.326948</td>
+      <td>0.071627</td>
+      <td>-0.148008</td>
+      <td>...</td>
+      <td>-0.026116</td>
+      <td>-0.034537</td>
+      <td>-0.406462</td>
+      <td>-0.257028</td>
+      <td>-0.613797</td>
+      <td>-0.093484</td>
+      <td>-0.939213</td>
+      <td>-0.158356</td>
+      <td>0.479365</td>
+      <td>-0.332378</td>
+    </tr>
+    <tr>
+      <th>Factor_4 (ucec)</th>
+      <td>0.321659</td>
+      <td>0.274981</td>
+      <td>0.148637</td>
+      <td>-0.832970</td>
+      <td>0.020647</td>
+      <td>0.033767</td>
+      <td>-0.202398</td>
+      <td>0.065250</td>
+      <td>-1.134238</td>
+      <td>-1.619760</td>
+      <td>...</td>
+      <td>0.295630</td>
+      <td>-1.465490</td>
+      <td>1.537956</td>
+      <td>0.259835</td>
+      <td>-0.707334</td>
+      <td>0.781751</td>
+      <td>-0.384141</td>
+      <td>-0.071286</td>
+      <td>-0.721724</td>
+      <td>0.367421</td>
+    </tr>
+    <tr>
+      <th>Factor_5 (ucs)</th>
+      <td>-0.246544</td>
+      <td>-0.396687</td>
+      <td>-0.053422</td>
+      <td>-0.028221</td>
+      <td>0.059327</td>
+      <td>-0.059312</td>
+      <td>0.274254</td>
+      <td>-0.084729</td>
+      <td>-0.194032</td>
+      <td>-0.108764</td>
+      <td>...</td>
+      <td>0.092816</td>
+      <td>0.252733</td>
+      <td>0.035070</td>
+      <td>-0.412078</td>
+      <td>-0.065257</td>
+      <td>0.324985</td>
+      <td>0.109216</td>
+      <td>-0.071969</td>
+      <td>0.008588</td>
+      <td>0.196552</td>
+    </tr>
+    <tr>
+      <th>Factor_6</th>
+      <td>0.056331</td>
+      <td>-0.018716</td>
+      <td>0.026955</td>
+      <td>-0.245057</td>
+      <td>0.252097</td>
+      <td>-0.084610</td>
+      <td>-0.308168</td>
+      <td>0.120581</td>
+      <td>0.316507</td>
+      <td>-0.160259</td>
+      <td>...</td>
+      <td>0.106847</td>
+      <td>0.229631</td>
+      <td>0.029902</td>
+      <td>0.188749</td>
+      <td>-0.011532</td>
+      <td>-0.216373</td>
+      <td>0.151458</td>
+      <td>-0.031476</td>
+      <td>0.122704</td>
+      <td>-0.108069</td>
+    </tr>
+    <tr>
+      <th>Factor_7</th>
+      <td>0.944083</td>
+      <td>0.190422</td>
+      <td>-0.057485</td>
+      <td>1.765003</td>
+      <td>0.045593</td>
+      <td>0.235488</td>
+      <td>-0.119139</td>
+      <td>0.720282</td>
+      <td>0.056930</td>
+      <td>-0.210789</td>
+      <td>...</td>
+      <td>1.772369</td>
+      <td>0.157764</td>
+      <td>0.819517</td>
+      <td>0.625311</td>
+      <td>1.294285</td>
+      <td>-0.240169</td>
+      <td>-0.199078</td>
+      <td>-0.321732</td>
+      <td>0.018755</td>
+      <td>-0.211537</td>
+    </tr>
+    <tr>
+      <th>Factor_8</th>
+      <td>0.567729</td>
+      <td>0.866502</td>
+      <td>0.309059</td>
+      <td>0.263794</td>
+      <td>-0.752690</td>
+      <td>0.049291</td>
+      <td>0.931249</td>
+      <td>-0.032493</td>
+      <td>-0.359230</td>
+      <td>-0.975684</td>
+      <td>...</td>
+      <td>0.737753</td>
+      <td>-0.696783</td>
+      <td>0.189181</td>
+      <td>-0.056764</td>
+      <td>0.683843</td>
+      <td>-0.067248</td>
+      <td>0.573768</td>
+      <td>0.351589</td>
+      <td>-0.339139</td>
+      <td>-0.256080</td>
+    </tr>
+    <tr>
+      <th>Factor_9</th>
+      <td>1.361504</td>
+      <td>0.462694</td>
+      <td>0.173420</td>
+      <td>-0.463739</td>
+      <td>-0.196467</td>
+      <td>-0.239038</td>
+      <td>-0.203452</td>
+      <td>0.735064</td>
+      <td>0.491511</td>
+      <td>-0.076739</td>
+      <td>...</td>
+      <td>1.247741</td>
+      <td>0.358347</td>
+      <td>0.286029</td>
+      <td>0.187339</td>
+      <td>-0.728862</td>
+      <td>-0.415017</td>
+      <td>0.249448</td>
+      <td>0.128513</td>
+      <td>-0.140165</td>
+      <td>0.117316</td>
+    </tr>
+    <tr>
+      <th>Factor_10</th>
+      <td>0.280253</td>
+      <td>0.628980</td>
+      <td>0.000314</td>
+      <td>0.263023</td>
+      <td>-0.880207</td>
+      <td>-0.004985</td>
+      <td>0.116316</td>
+      <td>-0.213680</td>
+      <td>0.927243</td>
+      <td>0.325137</td>
+      <td>...</td>
+      <td>-0.442285</td>
+      <td>0.154566</td>
+      <td>-0.581967</td>
+      <td>0.341046</td>
+      <td>0.377159</td>
+      <td>-0.124212</td>
+      <td>-0.156052</td>
+      <td>-0.333031</td>
+      <td>0.964307</td>
+      <td>0.109611</td>
+    </tr>
+    <tr>
+      <th>Factor_11</th>
+      <td>-0.017417</td>
+      <td>-0.049315</td>
+      <td>0.036915</td>
+      <td>0.014929</td>
+      <td>-0.023290</td>
+      <td>0.029108</td>
+      <td>-0.020272</td>
+      <td>-0.001592</td>
+      <td>0.028506</td>
+      <td>-0.010991</td>
+      <td>...</td>
+      <td>-0.017803</td>
+      <td>-0.123792</td>
+      <td>0.022235</td>
+      <td>-0.062988</td>
+      <td>0.032762</td>
+      <td>-0.021049</td>
+      <td>-0.052274</td>
+      <td>0.012072</td>
+      <td>0.063581</td>
+      <td>-0.015236</td>
+    </tr>
+    <tr>
+      <th>Factor_12</th>
+      <td>-0.046363</td>
+      <td>-0.025982</td>
+      <td>-0.078152</td>
+      <td>-0.990845</td>
+      <td>0.123614</td>
+      <td>-0.020091</td>
+      <td>0.017208</td>
+      <td>-0.359655</td>
+      <td>-0.125432</td>
+      <td>-0.198495</td>
+      <td>...</td>
+      <td>0.023031</td>
+      <td>-0.938130</td>
+      <td>0.821455</td>
+      <td>0.410206</td>
+      <td>-0.300631</td>
+      <td>-0.820548</td>
+      <td>-0.382904</td>
+      <td>-0.754267</td>
+      <td>-0.709637</td>
+      <td>-0.756123</td>
+    </tr>
+  </tbody>
+</table>
+<p>12 rows × 4436 columns</p>
+</div></div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># Plot top loadings for factor 1 (breast cancer)
+sofa.pl.plot_top_loadings(model, view=&quot;protein&quot;, factor = 1, top_n=10)
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[30]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;Axes: xlabel=&#39;Loadings&#39;, ylabel=&#39;Features&#39;&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_tcga_gyn_analysis_45_1.png" src="../_images/notebooks_tcga_gyn_analysis_45_1.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># Plot top loadings for factor 3 (breast cancer)
+sofa.pl.plot_top_loadings(model, view=&quot;rna&quot;, factor = 3, top_n=20)
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[31]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;Axes: xlabel=&#39;Loadings&#39;, ylabel=&#39;Features&#39;&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_tcga_gyn_analysis_46_1.png" src="../_images/notebooks_tcga_gyn_analysis_46_1.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># Plot top rna loadings for factor 10
+sofa.pl.plot_top_loadings(model, view=&quot;rna&quot;, factor = 10, top_n=20)
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[32]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;Axes: xlabel=&#39;Loadings&#39;, ylabel=&#39;Features&#39;&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_tcga_gyn_analysis_47_1.png" src="../_images/notebooks_tcga_gyn_analysis_47_1.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[33]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># Plot top protein loadings for factor 10
+sofa.pl.plot_top_loadings(model, view=&quot;protein&quot;, factor = 10, top_n=20)
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[33]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;Axes: xlabel=&#39;Loadings&#39;, ylabel=&#39;Features&#39;&gt;
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_tcga_gyn_analysis_48_1.png" src="../_images/notebooks_tcga_gyn_analysis_48_1.png" />
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[35]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span># plot enrichment of loadings of factor 10
+loadings = sofa.tl.get_top_loadings(model,factor=10, view=&quot;rna&quot;, sign=&quot;+&quot;, top_n=100)
+loadings2 = sofa.tl.get_top_loadings(model,factor=10, view=&quot;rna&quot;, sign=&quot;-&quot;, top_n=100)
+
+sofa.pl.plot_enrichment(loadings, background=mdata.mod[&quot;RNA&quot;].var, db=[ &quot;Reactome_2022&quot;,&quot;GO_Biological_Process_2023&quot;], top_n=[2,2])
+sofa.pl.plot_enrichment(gene_list=loadings2,db=[&quot;Reactome_2022&quot;], top_n=[4],background=mdata.mod[&quot;RNA&quot;].var)
+<br/><br/></pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[35]:
+</pre></div>
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+&lt;Axes: xlabel=&#39;-log10 adjusted p-values&#39;, ylabel=&#39;Gene sets&#39;&gt;
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_tcga_gyn_analysis_49_1.png" src="../_images/notebooks_tcga_gyn_analysis_49_1.png" />
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_tcga_gyn_analysis_49_2.png" src="../_images/notebooks_tcga_gyn_analysis_49_2.png" />
+</div>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Tuemay Capraz.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
