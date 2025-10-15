@@ -13,10 +13,10 @@ Here we present Semi-supervised Omics Factor Analysis (SOFA), a multi-omics inte
 
 # Installation
 
-To install `SOFA` first create `Python 3.8` environment e.g. by
+To install `SOFA` first create `Python 3.10` environment e.g. by
 
 ```
-conda create --name sofa-env python=3.8
+conda create --name sofa-env python=3.10
 conda activate sofa-env
 ```
 
